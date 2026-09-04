@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./instance:/app/instance
+      - ./backups:/app/backups
+      - ./uploads:/app/uploads
+      - ./invoices:/app/invoices
+    environment:
+      - SECRET_KEY=prod-secret-key-321-change-me
+      - SQLALCHEMY_DATABASE_URI=sqlite:///instance/store.db
+      - FLASK_DEBUG=0
+    restart: always

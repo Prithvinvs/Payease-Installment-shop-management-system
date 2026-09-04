@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory & Stock Valuation Report{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') if current_user.role.role_name in ['Super Admin', 'Admin'] else '#' }}" class="text-decoration-none text-muted">Reports</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Product Report</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Inventory & Stock Valuation Reports</h1>
+        <p class="text-muted text-xs">Inspect current store stock, alert thresholds, and total valuation amounts</p>
+    </div>
+    <div class="col-12 col-md-6 text-md-end">
+        <div class="d-flex gap-2 justify-content-md-end flex-wrap mt-2">
+            {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+            <a href="{{ url_for('reports_api.export_csv') }}?type=products" class="btn btn-sm btn-light border px-3 rounded-pill">
+                <i class="bi bi-filetype-csv text-danger me-1"></i>Export CSV
+            </a>
+            <a href="{{ url_for('reports_api.export_excel') }}?type=products" class="btn btn-sm btn-light border px-3 rounded-pill">
+                <i class="bi bi-filetype-xls text-success me-1"></i>Export Excel
+            </a>
+            {% endif %}
+            <button onclick="window.print()" class="btn btn-sm btn-primary px-3 rounded-pill">
+                <i class="bi bi-printer me-1"></i>Print List
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Grid table -->
+<div class="card border-0 shadow-sm rounded-4 text-sm">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0 text-dark">Store Stock Ledger</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table align-middle text-sm" id="productReportsTable">
+                <thead class="bg-light text-xs text-muted uppercase text-center">
+                    <tr>
+                        <th class="text-start">Product Code</th>
+                        <th class="text-start">Product Name</th>
+                        <th>Category</th>
+                        <th>Brand</th>
+                        {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+                        <th class="text-end">Cost Price</th>
+                        {% endif %}
+                        <th class="text-end">Selling Price</th>
+                        <th class="text-center">Current Stock</th>
+                        {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+                        <th class="text-end">Inventory Value</th>
+                        {% endif %}
+                        <th>Alert Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr class="text-center">
+                        <td class="text-start font-monospace text-xs text-secondary">{{ p.product_code }}</td>
+                        <td class="text-start fw-bold text-dark">{{ p.product_name }}</td>
+                        <td>{{ p.category.category_name if p.category else 'N/A' }}</td>
+                        <td>{{ p.brand.brand_name if p.brand else 'N/A' }}</td>
+                        {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+                        <td class="text-end">₹{{ "{:,.2f}".format(p.purchase_price) }}</td>
+                        {% endif %}
+                        <td class="text-end fw-semibold">₹{{ "{:,.2f}".format(p.selling_price) }}</td>
+                        <td class="text-center fw-bold">{{ p.current_stock }}</td>
+                        {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+                        <td class="text-end fw-bold text-primary">₹{{ "{:,.2f}".format(p.purchase_price * p.current_stock) }}</td>
+                        {% endif %}
+                        <td>
+                            {% if p.current_stock <= 0 %}
+                            <span class="badge bg-danger rounded-pill text-xs fw-semibold">OUT OF STOCK</span>
+                            {% elif p.current_stock <= p.minimum_stock %}
+                            <span class="badge bg-warning text-dark rounded-pill text-xs fw-semibold">LOW STOCK</span>
+                            {% else %}
+                            <span class="badge bg-success rounded-pill text-xs fw-semibold">STABLE</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not products %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted p-5">No products found in store ledger.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

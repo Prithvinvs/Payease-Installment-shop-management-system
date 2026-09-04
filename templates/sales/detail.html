@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}Invoice Details - {{ sale.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 no-print">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('sales.index') }}" class="text-decoration-none text-muted">Sales & Billing</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">{{ sale.invoice_number }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Invoice Summary</h1>
+    </div>
+    <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0 d-flex flex-wrap justify-content-md-end gap-2">
+        <a href="{{ url_for('sales.invoice_print', id=sale.id) }}" target="_blank" class="btn btn-light border btn-sm px-3 rounded-pill">
+            <i class="bi bi-printer me-1.5 text-muted"></i>Print Invoice
+        </a>
+        <button type="button" onclick="downloadInvoicePDF()" class="btn btn-light border btn-sm px-3 rounded-pill">
+            <i class="bi bi-file-earmark-pdf me-1.5 text-danger"></i>Download PDF
+        </button>
+        {% if current_user.role.role_name in ['Super Admin', 'Admin'] and sale.sale_status != 'cancelled' %}
+        <button type="button" onclick="cancelInvoiceDirectly()" class="btn btn-outline-danger btn-sm px-3 rounded-pill">
+            <i class="bi bi-x-circle me-1.5"></i>Cancel Invoice
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Invoice Card Container (Target of PDF generation) -->
+<div class="row mb-5 justify-content-center">
+    <div class="col-12 col-xl-9">
+        <div class="card border-0 shadow-sm rounded-4" id="printableInvoiceArea">
+            <div class="card-body p-5">
+                <!-- Invoice Header -->
+                <div class="row align-items-center mb-5 pb-4 border-bottom">
+                    <div class="col-6">
+                        <span class="fs-3 fw-extrabold text-primary">PayEase</span>
+                        <p class="text-muted text-xs mb-0 mt-1">Instalment Product Sales & Credit Management</p>
+                        <p class="text-muted text-xs mb-0">MG Road, Bangalore, Karnataka - 560001</p>
+                        <p class="text-muted text-xs mb-0">Phone: +91 99999 99999 | Email: contact@payease.com</p>
+                    </div>
+                    <div class="col-6 text-end">
+                        <h2 class="fw-bold text-dark mb-1">INVOICE</h2>
+                        <span class="badge bg-primary-light text-primary px-3 py-1 rounded-pill text-xs fw-semibold mb-2">{{ sale.invoice_number }}</span>
+                        <p class="text-muted text-xs mb-0">Invoice Date: <strong>{{ sale.sale_date.strftime('%Y-%m-%d %H:%M') }}</strong></p>
+                        <p class="text-muted text-xs mb-0">Operator ID: <strong>USR-{{ sale.created_by or 'System' }}</strong></p>
+                    </div>
+                </div>
+                
+                <!-- Customer info and metadata -->
+                <div class="row g-4 mb-5 text-sm">
+                    <div class="col-6">
+                        <strong class="text-xs text-muted uppercase d-block mb-1.5">Billed To:</strong>
+                        <h5 class="fw-bold text-dark mb-1">{{ sale.customer.full_name }}</h5>
+                        <p class="text-muted mb-0">{{ sale.customer.address_line1 }}</p>
+                        {% if sale.customer.address_line2 %}
+                        <p class="text-muted mb-0">{{ sale.customer.address_line2 }}</p>
+                        {% endif %}
+                        <p class="text-muted mb-0">{{ sale.customer.city }}, {{ sale.customer.state }} - {{ sale.customer.postal_code }}</p>
+                        <p class="text-dark fw-medium mb-0 mt-2">Phone: {{ sale.customer.phone_number }}</p>
+                        <p class="text-muted mb-0">Code: {{ sale.customer.customer_code }}</p>
+                    </div>
+                    
+                    <div class="col-6 text-end">
+                        <strong class="text-xs text-muted uppercase d-block mb-1.5">Invoice Parameters:</strong>
+                        <p class="text-secondary mb-1">Payment Status: 
+                            {% if sale.payment_status == 'paid' %}
+                            <strong class="text-success uppercase">Fully Paid</strong>
+                            {% elif sale.payment_status == 'partial' %}
+                            <strong class="text-warning uppercase">Partial</strong>
+                            {% else %}
+                            <strong class="text-danger uppercase">Pending</strong>
+                            {% endif %}
+                        </p>
+                        <p class="text-secondary mb-1">Invoice Status: 
+                            {% if sale.sale_status == 'completed' %}
+                            <strong class="text-success uppercase">Active Confirmed</strong>
+                            {% else %}
+                            <strong class="text-danger uppercase">Cancelled Refunded</strong>
+                            {% endif %}
+                        </p>
+                        <!-- QR code scan placeholder -->
+                        <div class="mt-3">
+                            <canvas id="invoiceQrCanvas" style="width: 80px; height: 80px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Products items table grid -->
+                <div class="table-responsive mb-5">
+                    <table class="table table-bordered align-middle text-sm">
+                        <thead class="bg-light text-xs text-muted uppercase text-center">
+                            <tr>
+                                <th scope="col" style="width: 60px;">Code</th>
+                                <th scope="col" class="text-start">Product Item Description</th>
+                                <th scope="col" style="width: 60px;">Qty</th>
+                                <th scope="col" class="text-end" style="width: 110px;">Unit Price</th>
+                                <th scope="col" class="text-end" style="width: 90px;">Disc %</th>
+                                <th scope="col" class="text-end" style="width: 90px;">GST %</th>
+                                <th scope="col" class="text-end" style="width: 120px;">Total Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in sale.items %}
+                            <tr>
+                                <td class="text-center fw-bold text-xs">{{ item.product.product_code }}</td>
+                                <td class="fw-semibold text-dark">{{ item.product.product_name }}</td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(item.unit_price) }}</td>
+                                <td class="text-end text-muted">{{ item.discount }}%</td>
+                                <td class="text-end text-muted">{{ item.tax }}%</td>
+                                <td class="text-end fw-bold text-dark">₹{{ "{:,.2f}".format(item.total_price) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pricing summaries and instalment schedules -->
+                <div class="row g-4 mb-5">
+                    <div class="col-12 col-md-6 text-sm text-secondary">
+                        {% if sale.instalment_plan %}
+                        <div class="p-4 bg-light rounded-4">
+                            <strong class="text-xs text-muted uppercase d-block mb-3"><i class="bi bi-calendar-check text-primary me-2"></i>Instalment Plan Schedule</strong>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Plan Tenure:</span>
+                                <strong class="text-dark">{{ sale.instalment_plan.total_instalments }} Months</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Monthly EMI Amount:</span>
+                                <strong class="text-primary">₹{{ "{:,.2f}".format(sale.instalment_plan.amount_per_instalment) }} / mo</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Monthly Due Day:</span>
+                                <strong class="text-dark">Day {{ sale.instalment_plan.due_day_of_month }} of month</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Plan Status:</span>
+                                <strong class="text-success uppercase">{{ sale.instalment_plan.status }}</strong>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="p-4 bg-light rounded-4 text-center">
+                            <i class="bi bi-cash-coin text-success fs-3 mb-2 d-block"></i>
+                            <strong class="text-dark">Cash Purchase</strong>
+                            <p class="text-muted text-xs mb-0 mt-0.5">Paid in full. No instalments active.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-12 col-md-6 text-sm text-secondary">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong class="text-dark">₹{{ "{:,.2f}".format(sale.subtotal) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Discount Amount:</span>
+                            <strong class="text-success">- ₹{{ "{:,.2f}".format(sale.discount_amount) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>GST (Tax):</span>
+                            <strong class="text-dark">₹{{ "{:,.2f}".format(sale.tax_amount) }}</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong class="text-dark text-sm">Grand Total:</strong>
+                            <strong class="text-dark text-base">₹{{ "{:,.2f}".format(sale.grand_total) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Cash Down Payment:</span>
+                            <strong class="text-success">₹{{ "{:,.2f}".format(sale.down_payment) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-danger">Outstanding Balance:</span>
+                            <strong class="text-danger text-sm">₹{{ "{:,.2f}".format(sale.remaining_balance) }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Terms and Authorized signature details -->
+                <div class="border-top pt-4 text-xs text-muted">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <strong class="text-dark d-block mb-1">Terms & Conditions:</strong>
+                            <p class="mb-0 lh-sm">1. All instalment payments must be cleared before the due day of each month.</p>
+                            <p class="mb-0 lh-sm">2. Late payments are subject to standard grace period penalties.</p>
+                            <p class="mb-0 lh-sm">3. Product ownership transfers completely only after clearing outstanding balances.</p>
+                        </div>
+                        <div class="col-4 text-center">
+                            <p class="mb-5">Authorized Signature</p>
+                            <div class="border-bottom mx-auto" style="width: 150px;"></div>
+                            <p class="mt-1">PayEase Manager</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- CDN script tags for client side JS QR generation and PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Render QR Code (holds invoice number data)
+        var qr = new QRious({
+            element: document.getElementById('invoiceQrCanvas'),
+            value: '{{ sale.invoice_number }}',
+            size: 100
+        });
+    });
+
+    function downloadInvoicePDF() {
+        const element = document.getElementById('printableInvoiceArea');
+        const opt = {
+            margin:       10,
+            filename:     'Invoice_{{ sale.invoice_number }}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    function cancelInvoiceDirectly() {
+        if (confirm("Are you sure you want to cancel this invoice? This will restore product stock levels and cancel associated instalment plans!")) {
+            $.ajax({
+                url: `/api/sales/{{ sale.id }}`,
+                type: 'DELETE',
+                success: function(response) {
+                    alert(response.message);
+                    window.location.reload();
+                },
+                error: function(xhr) {
+                    const err = xhr.responseJSON ? xhr.responseJSON.error : "Failed to cancel invoice.";
+                    alert("Error: " + err);
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

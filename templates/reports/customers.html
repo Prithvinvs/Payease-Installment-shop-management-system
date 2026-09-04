@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Reports & Lifetime Value{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}" class="text-decoration-none text-muted">Reports</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Customer Report</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Customer Lifetime Value Reports</h1>
+        <p class="text-muted text-xs">Analyze total customer purchases, payments history, and outstanding balances</p>
+    </div>
+    <div class="col-12 col-md-6 text-md-end">
+        <div class="d-flex gap-2 justify-content-md-end flex-wrap mt-2">
+            <a href="{{ url_for('reports_api.export_csv') }}?type=customers" class="btn btn-sm btn-light border px-3 rounded-pill">
+                <i class="bi bi-filetype-csv text-danger me-1"></i>Export CSV
+            </a>
+            <a href="{{ url_for('reports_api.export_excel') }}?type=customers" class="btn btn-sm btn-light border px-3 rounded-pill">
+                <i class="bi bi-filetype-xls text-success me-1"></i>Export Excel
+            </a>
+            <button onclick="window.print()" class="btn btn-sm btn-primary px-3 rounded-pill">
+                <i class="bi bi-printer me-1"></i>Print List
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Customers Lifetime Value table -->
+<div class="card border-0 shadow-sm rounded-4 text-sm">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0 text-dark">Customer Lifetime Metrics</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table align-middle text-sm" id="customerReportsTable">
+                <thead class="bg-light text-xs text-muted uppercase text-center">
+                    <tr>
+                        <th class="text-start">Customer Code</th>
+                        <th class="text-start">Full Name</th>
+                        <th>Phone Number</th>
+                        <th class="text-end">Total Purchases</th>
+                        <th class="text-end">Total Paid</th>
+                        <th class="text-end">Outstanding Balance</th>
+                        <th>Ledger</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                    <tr class="text-center">
+                        <td class="text-start font-monospace text-xs text-secondary">{{ c.customer_code }}</td>
+                        <td class="text-start fw-bold text-dark">{{ c.full_name }}</td>
+                        <td>{{ c.phone_number }}</td>
+                        <td class="text-end fw-semibold">₹{{ "{:,.2f}".format(c.total_purchases) }}</td>
+                        <td class="text-end text-success fw-semibold">₹{{ "{:,.2f}".format(c.total_payments) }}</td>
+                        <td class="text-end text-danger fw-bold">₹{{ "{:,.2f}".format(c.outstanding_balance) }}</td>
+                        <td>
+                            <a href="{{ url_for('payments.customer_ledger', customer_id=c.id) }}" class="btn btn-sm btn-light border rounded-pill px-2.5">
+                                <i class="bi bi-file-earmark-spreadsheet text-primary"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not customers %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted p-5">No customer accounts registered.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

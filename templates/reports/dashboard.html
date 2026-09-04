@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports & Business Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12 col-md-6">
+        <h1 class="h3 fw-bold mb-0 text-dark">Reports & Business Intelligence</h1>
+        <p class="text-muted text-xs">Real-time collections tracking, margins analysis, and monthly forecasting</p>
+    </div>
+    <div class="col-12 col-md-6 text-md-end">
+        <div class="btn-group rounded-pill overflow-hidden shadow-sm">
+            <a href="{{ url_for('reports.sales') }}" class="btn btn-sm btn-white border border-end-0 text-dark px-3 fw-semibold">Sales</a>
+            <a href="{{ url_for('reports.customers') }}" class="btn btn-sm btn-white border border-end-0 text-dark px-3 fw-semibold">Customers</a>
+            <a href="{{ url_for('reports.products') }}" class="btn btn-sm btn-white border border-end-0 text-dark px-3 fw-semibold">Inventory</a>
+            <a href="{{ url_for('reports.payments') }}" class="btn btn-sm btn-white border border-end-0 text-dark px-3 fw-semibold">Payments</a>
+            <a href="{{ url_for('reports.financial') }}" class="btn btn-sm btn-white border text-dark px-3 fw-semibold">Financials</a>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards Grid -->
+<div class="row g-3 mb-4 text-sm" id="kpiGrid">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+            <span class="text-muted text-xs uppercase d-block mb-1">Total Revenue Collected</span>
+            <h3 class="fw-bold mb-0 text-dark" id="kpiRevenue"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></h3>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+            <span class="text-muted text-xs uppercase d-block mb-1">Net Profits Earned</span>
+            <h3 class="fw-bold mb-0 text-success" id="kpiProfit"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></h3>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+            <span class="text-danger text-xs uppercase d-block mb-1">Outstanding Balance Dues</span>
+            <h3 class="fw-bold mb-0 text-danger" id="kpiOutstanding"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></h3>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+            <span class="text-primary text-xs uppercase d-block mb-1">Active credit Plans</span>
+            <h3 class="fw-bold mb-0 text-primary" id="kpiPlans"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></h3>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Forecast Grid -->
+<div class="row g-4 mb-4 text-sm">
+    <!-- Revenue Trend Chart -->
+    <div class="col-12 col-xl-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h5 class="fw-bold mb-4 text-dark">6-Month collections Trend</h5>
+            <div style="height: 320px; position: relative;">
+                <canvas id="revenueTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Projections Forecasting panel -->
+    <div class="col-12 col-xl-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-light border">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-magic text-primary me-2"></i>Predictive Projections</h5>
+            <p class="text-xs text-muted mb-4">Linear trend estimations based on historical database sequences.</p>
+            
+            <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+                <div>
+                    <span class="text-xs text-secondary d-block">Expected Revenue (Next Month)</span>
+                    <strong class="text-dark fs-6" id="foreRevenue"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></strong>
+                </div>
+                <i class="bi bi-graph-up text-primary fs-3"></i>
+            </div>
+            
+            <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+                <div>
+                    <span class="text-xs text-secondary d-block">Scheduled EMI collections (Next 30 Days)</span>
+                    <strong class="text-success fs-6" id="foreCollections"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></strong>
+                </div>
+                <i class="bi bi-clock-history text-success fs-3"></i>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <div>
+                    <span class="text-xs text-secondary d-block">Projected New Registrations</span>
+                    <strong class="text-dark fs-6" id="foreAcquisitions"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></strong>
+                </div>
+                <i class="bi bi-person-plus text-primary fs-3"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 text-sm">
+    <!-- Top Selling Products Bar Chart -->
+    <div class="col-12 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h5 class="fw-bold mb-4 text-dark">Top 5 Selling Products</h5>
+            <div style="height: 250px; position: relative;">
+                <canvas id="topProductsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Methods Doughnut Chart -->
+    <div class="col-12 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h5 class="fw-bold mb-4 text-dark">Payment Method distribution</h5>
+            <div style="height: 250px; position: relative;">
+                <canvas id="paymentMethodsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ChartJS Script Integration -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Fetch dashboard KPI data
+    fetch('/api/reports/dashboard')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('kpiRevenue').innerText = '₹' + data.total_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('kpiProfit').innerText = '₹' + data.total_profit.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('kpiOutstanding').innerText = '₹' + data.total_outstanding.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('kpiPlans').innerText = data.active_instalment_plans;
+            
+            // Forecasts
+            document.getElementById('foreRevenue').innerText = '₹' + data.forecast.expected_monthly_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('foreCollections').innerText = '₹' + data.forecast.expected_collections_next_30_days.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('foreAcquisitions').innerText = Math.round(data.forecast.expected_customer_growth) + ' Customers';
+        });
+
+    // 2. Fetch Charts analytics data
+    fetch('/api/analytics')
+        .then(res => res.json())
+        .then(data => {
+            // Revenue Trend Chart
+            new Chart(document.getElementById("revenueTrendChart"), {
+                type: "line",
+                data: {
+                    labels: data.revenue_trend.labels,
+                    datasets: [{
+                        label: "Monthly Collection (Rs)",
+                        data: data.revenue_trend.values,
+                        borderColor: "#3b82f6",
+                        backgroundColor: "rgba(59, 130, 246, 0.1)",
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Top Products Chart
+            new Chart(document.getElementById("topProductsChart"), {
+                type: "bar",
+                data: {
+                    labels: data.top_products.labels,
+                    datasets: [{
+                        label: "Quantity Sold",
+                        data: data.top_products.values,
+                        backgroundColor: "#10b981"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Payment Methods Chart
+            new Chart(document.getElementById("paymentMethodsChart"), {
+                type: "doughnut",
+                data: {
+                    labels: data.payment_methods.labels,
+                    datasets: [{
+                        data: data.payment_methods.values,
+                        backgroundColor: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+});
+</script>
+{% endblock %}

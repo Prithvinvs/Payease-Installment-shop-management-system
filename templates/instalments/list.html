@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Instalment Plans Directory - PayEase{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Instalment Plans</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Instalment Plans Directory</h1>
+    </div>
+</div>
+
+<!-- Quick Status Filters -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 text-sm">
+    <div class="card-body p-3">
+        <div class="d-flex flex-wrap gap-1.5">
+            <a href="{{ url_for('instalments.index') }}" class="btn btn-xs rounded-pill {% if not current_status %}btn-primary{% else %}btn-light border{% endif %}">All Plans</a>
+            <a href="{{ url_for('instalments.index', status='active') }}" class="btn btn-xs rounded-pill {% if current_status == 'active' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">Active</a>
+            <a href="{{ url_for('instalments.index', status='overdue') }}" class="btn btn-xs rounded-pill {% if current_status == 'overdue' %}btn-danger text-white{% else %}btn-light border{% endif %}">Overdue</a>
+            <a href="{{ url_for('instalments.index', status='completed') }}" class="btn btn-xs rounded-pill {% if current_status == 'completed' %}btn-success text-white{% else %}btn-light border{% endif %}">Completed</a>
+            <a href="{{ url_for('instalments.index', status='cancelled') }}" class="btn btn-xs rounded-pill {% if current_status == 'cancelled' %}btn-light text-secondary{% else %}btn-light border{% endif %}">Cancelled</a>
+        </div>
+    </div>
+</div>
+
+<!-- Instalments table grid -->
+<div class="card border-0 shadow-sm rounded-4 text-sm">
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="plansTable">
+                <thead class="bg-light text-xs text-muted uppercase">
+                    <tr>
+                        <th scope="col" class="ps-4">Plan No</th>
+                        <th scope="col">Invoice No</th>
+                        <th scope="col">Customer</th>
+                        <th scope="col" class="text-end">Grand Total</th>
+                        <th scope="col" class="text-end">Down Payment</th>
+                        <th scope="col" class="text-end">Unpaid Balance</th>
+                        <th scope="col" class="text-end">Monthly EMI</th>
+                        <th scope="col" class="text-center">Tenure</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end pe-4" style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in plans %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">{{ p.plan_number }}</td>
+                        <td>
+                            <a href="{{ url_for('sales.invoice_detail', id=p.sale_id) }}" class="fw-semibold text-decoration-none text-dark">
+                                {{ p.invoice_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('customers.profile', id=p.customer_id) }}" class="fw-bold text-dark text-decoration-none d-block">
+                                {{ p.customer.full_name }}
+                            </a>
+                            <span class="text-xs text-muted">Phone: {{ p.customer.phone_number }}</span>
+                        </td>
+                        <td class="fw-bold text-dark text-end">₹{{ "{:,.2f}".format(p.total_amount) }}</td>
+                        <td class="text-muted text-end">₹{{ "{:,.2f}".format(p.down_payment) }}</td>
+                        <td class="fw-bold text-danger text-end">₹{{ "{:,.2f}".format(p.outstanding_amount) }}</td>
+                        <td class="fw-semibold text-primary text-end">₹{{ "{:,.2f}".format(p.monthly_emi) }}</td>
+                        <td class="text-center fw-medium">{{ p.number_of_instalments }} mo</td>
+                        <td>
+                            {% if p.status == 'active' %}
+                            <span class="badge bg-primary-light text-primary rounded-pill text-xs">Active</span>
+                            {% elif p.status == 'completed' %}
+                            <span class="badge bg-success-light text-success rounded-pill text-xs">Completed</span>
+                            {% elif p.status == 'overdue' %}
+                            <span class="badge bg-danger-light text-danger rounded-pill text-xs">Overdue</span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary rounded-pill text-xs">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{{ url_for('instalments.detail', id=p.id) }}" class="btn btn-sm btn-light border rounded-pill px-3 fw-semibold text-xs">
+                                <i class="bi bi-eye me-1 text-muted"></i>Manage
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#plansTable').DataTable({
+            "order": [[0, "desc"]],
+            "pageLength": 10
+        });
+    });
+</script>
+{% endblock %}

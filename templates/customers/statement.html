@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statement of Account - {{ customer.full_name }}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            font-size: 0.85rem;
+            padding: 30px;
+        }
+        
+        .statement-header {
+            border-bottom: 2px solid #333333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .store-logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #2563EB;
+        }
+        
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 1.5px solid #e2e8f0;
+            padding-bottom: 6px;
+            margin-bottom: 15px;
+            margin-top: 30px;
+            color: #1e293b;
+        }
+        
+        .outstanding-box {
+            background-color: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: right;
+            margin-top: 30px;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+                font-size: 0.8rem;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .outstanding-box {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Back to profile utility bar (hidden when printing) -->
+    <div class="container-fluid no-print mb-4 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+        <span class="text-xs text-muted"><i class="bi bi-info-circle me-1"></i>Statement print view. Use the button to print, or go back to profile.</span>
+        <div>
+            <a href="{{ url_for('customers.profile', id=customer.id) }}" class="btn btn-sm btn-secondary px-3 rounded-pill me-2">Back to Profile</a>
+            <button onclick="window.print()" class="btn btn-sm btn-primary px-3 rounded-pill">Print Statement</button>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <!-- Statement header block -->
+        <div class="statement-header">
+            <div class="row align-items-center">
+                <div class="col-6">
+                    <span class="store-logo">PayEase</span>
+                    <p class="text-muted text-xs mb-0 mt-1">Instalment Product Sales & Credit Management</p>
+                    <p class="text-muted text-xs mb-0">MG Road, Bangalore, Karnataka - 560001</p>
+                    <p class="text-muted text-xs mb-0">Phone: +91 99999 99999 | Email: contact@payease.com</p>
+                </div>
+                <div class="col-6 text-end">
+                    <h2 class="fw-bold text-dark mb-1">Statement of Account</h2>
+                    <p class="text-muted text-xs mb-0">Statement Date: <strong>{{ today.strftime('%d-%b-%Y') }}</strong></p>
+                    <p class="text-muted text-xs mb-0">Customer Code: <strong>{{ customer.customer_code }}</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account demographics info -->
+        <div class="row mb-4">
+            <div class="col-6">
+                <strong class="text-xs text-muted uppercase d-block mb-1">Billing Details:</strong>
+                <h5 class="fw-bold text-dark mb-1">{{ customer.full_name }}</h5>
+                <p class="text-muted mb-0">{{ customer.address_line1 }}</p>
+                {% if customer.address_line2 %}
+                <p class="text-muted mb-0">{{ customer.address_line2 }}</p>
+                {% endif %}
+                <p class="text-muted mb-0">{{ customer.city }}, {{ customer.state }} - {{ customer.postal_code }}</p>
+                <p class="text-muted text-xs mb-0">{{ customer.country }}</p>
+            </div>
+            <div class="col-6 text-end">
+                <strong class="text-xs text-muted uppercase d-block mb-1">Contact Information:</strong>
+                <p class="text-dark mb-0">Phone: <strong>{{ customer.phone_number }}</strong></p>
+                <p class="text-dark mb-0">Email: {{ customer.email or 'N/A' }}</p>
+                <p class="text-dark mb-0">Account Status: <strong class="text-success">{{ customer.status | uppercase }}</strong></p>
+            </div>
+        </div>
+
+        <!-- Purchase invoices list -->
+        <div class="section-title">Purchases Statement</div>
+        <table class="table table-bordered table-sm align-middle text-sm mb-4">
+            <thead class="table-light text-xs uppercase text-muted">
+                <tr>
+                    <th>Invoice No</th>
+                    <th>Date</th>
+                    <th>Product Item</th>
+                    <th class="text-end">Total Amount</th>
+                    <th class="text-end">Down Payment</th>
+                    <th class="text-end">Outstanding Dues</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if customer.sales %}
+                    {% for sale in customer.sales %}
+                    <tr>
+                        <td class="fw-bold text-xs">{{ sale.invoice_number }}</td>
+                        <td>{{ sale.sale_date.strftime('%d-%b-%Y') }}</td>
+                        <td class="fw-semibold">{{ sale.product.name }}</td>
+                        <td class="text-end">₹{{ "{:,.2f}".format(sale.total_amount) }}</td>
+                        <td class="text-end">₹{{ "{:,.2f}".format(sale.down_payment) }}</td>
+                        <td class="text-end text-danger">
+                            ₹{% if sale.instalment_plan %}{{ "{:,.2f}".format(sale.instalment_plan.outstanding_amount) }}{% else %}0.00{% endif %}
+                        </td>
+                        <td>
+                            {% if sale.status == 'paid' %}
+                            <span class="text-success fw-bold">Fully Paid</span>
+                            {% elif sale.status == 'cancelled' %}
+                            <span class="text-danger">Cancelled</span>
+                            {% else %}
+                            <span class="text-primary">Instalment Plan</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-3">No purchases invoices recorded.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Cash payment receipts list -->
+        <div class="section-title">Payments History</div>
+        <table class="table table-bordered table-sm align-middle text-sm">
+            <thead class="table-light text-xs uppercase text-muted">
+                <tr>
+                    <th>Receipt ID</th>
+                    <th>Date Paid</th>
+                    <th>Invoice Reference</th>
+                    <th class="text-end">Amount Paid</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if customer.payments %}
+                    {% for pay in customer.payments %}
+                    <tr>
+                        <td class="fw-bold text-xs">REC-{{ pay.id }}</td>
+                        <td>{{ pay.payment_date.strftime('%d-%b-%Y %H:%M') }}</td>
+                        <td class="fw-bold text-xs text-primary">{{ pay.sale.invoice_number }}</td>
+                        <td class="text-end text-success fw-semibold">₹{{ "{:,.2f}".format(pay.payment_amount) }}</td>
+                        <td><span class="text-success fw-semibold">Cleared</span></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">No payments receipts registered.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Outstanding summary details box -->
+        <div class="outstanding-box">
+            <div class="row justify-content-end align-items-center">
+                <div class="col-8 col-sm-6 text-end">
+                    <span class="text-muted d-block text-xs uppercase">Total Invoiced purchases:</span>
+                    <strong class="d-block mb-2">₹{{ "{:,.2f}".format(customer.total_purchases) }}</strong>
+                    
+                    <span class="text-muted d-block text-xs uppercase text-success">Total cash collected:</span>
+                    <strong class="d-block mb-2 text-success">₹{{ "{:,.2f}".format(customer.total_payments) }}</strong>
+                    
+                    <span class="text-muted d-block text-xs uppercase text-danger">Remaining outstanding balance:</span>
+                    <h3 class="fw-bold text-danger mb-0">₹{{ "{:,.2f}".format(customer.outstanding_balance) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer signature details -->
+        <div class="row mt-5 pt-5 text-center text-muted text-xs border-top">
+            <div class="col-4">
+                <p class="mb-5">Prepared By</p>
+                <div class="border-bottom mx-auto" style="width: 150px;"></div>
+                <p class="mt-1">System Audit Generator</p>
+            </div>
+            <div class="col-4">
+                <p class="mb-5">Authorized Signature</p>
+                <div class="border-bottom mx-auto" style="width: 150px;"></div>
+                <p class="mt-1">PayEase Manager</p>
+            </div>
+            <div class="col-4">
+                <p class="mb-5">Customer Acceptance</p>
+                <div class="border-bottom mx-auto" style="width: 150px;"></div>
+                <p class="mt-1">{{ customer.full_name }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Automatic print dialog -->
+    <script>
+        window.onload = function() {
+            // Only trigger automatically if not preview mode
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        };
+    </script>
+</body>
+</html>

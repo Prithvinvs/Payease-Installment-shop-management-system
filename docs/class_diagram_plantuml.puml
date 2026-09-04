@@ -1,0 +1,251 @@
+@startuml PayEase - UML Class Diagram
+
+skinparam class {
+    BackgroundColor White
+    ArrowColor #4F46E5
+    BorderColor #4F46E5
+}
+
+class Admin {
+    + id : int
+    + username : str
+    + email : str
+    + password_hash : str
+    + full_name : str
+    + status : str
+    + last_login : datetime
+    + set_password(password: str) : void
+    + check_password(password: str) : bool
+    + is_active() : bool
+    + is_locked() : bool
+}
+
+class Category {
+    + id : str
+    + category_code : str
+    + name : str
+    + description : str
+    + status : str
+    + get_products() : List<Product>
+}
+
+class Brand {
+    + id : str
+    + brand_name : str
+    + description : str
+    + status : str
+    + get_products() : List<Product>
+}
+
+class Product {
+    + id : str
+    + product_code : str
+    + barcode : str
+    + qr_code : str
+    + product_name : str
+    + category_id : str
+    + brand_id : str
+    + description : str
+    + purchase_price : Decimal
+    + selling_price : Decimal
+    + gst_percentage : Decimal
+    + current_stock : int
+    + minimum_stock : int
+    + maximum_stock : int
+    + unit : str
+    + status : str
+    + is_low_stock() : bool
+    + is_out_of_stock() : bool
+    + is_overstocked() : bool
+    + stock_status() : str
+    + stock_value() : float
+}
+
+class InventoryMovement {
+    + id : str
+    + product_id : str
+    + movement_type : str
+    + quantity : int
+    + previous_stock : int
+    + new_stock : int
+    + remarks : str
+    + created_by : int
+    + datetime created_at
+    + get_summary() : str
+}
+
+class Customer {
+    + id : str
+    + customer_code : str
+    + first_name : str
+    + last_name : str
+    + full_name : str
+    + email : str
+    + phone_number : str
+    + address_line1 : str
+    + city : str
+    + state : str
+    + postal_code : str
+    + country : str
+    + date date_of_birth
+    + str gender
+    + str status
+    + float outstanding_balance
+    + outstanding_balance() : float
+    + total_purchases() : float
+    + total_payments() : float
+}
+
+class Sale {
+    + id : str
+    + invoice_number : str
+    + customer_id : str
+    + datetime sale_date
+    + Decimal subtotal
+    + Decimal discount_amount
+    + Decimal tax_amount
+    + Decimal grand_total
+    + Decimal down_payment
+    + Decimal remaining_balance
+    + str payment_status
+    + str sale_status
+    + int created_by
+    + calculate_subtotal() : Decimal
+    + calculate_tax() : Decimal
+    + calculate_grand_total() : Decimal
+}
+
+class SaleItem {
+    + id : str
+    + sale_id : str
+    + product_id : str
+    + int quantity
+    + Decimal unit_price
+    + Decimal discount
+    + Decimal tax
+    + Decimal total_price
+    + calculate_total_price() : Decimal
+}
+
+class InstalmentPlan {
+    + id : str
+    + plan_number : str
+    + sale_id : str
+    + customer_id : str
+    + str invoice_number
+    + Decimal total_amount
+    + Decimal down_payment
+    + Decimal remaining_balance
+    + int number_of_instalments
+    + Decimal monthly_emi
+    + Decimal interest_rate
+    + Decimal processing_fee
+    + datetime start_date
+    + datetime first_due_date
+    + datetime last_due_date
+    + str status
+    + Decimal paid_amount
+    + Decimal outstanding_amount
+    + int completed_count
+    + paid_amount() : Decimal
+    + outstanding_amount() : Decimal
+    + completed_count() : int
+    + pending_count() : int
+    + overdue_count() : int
+}
+
+class InstalmentSchedule {
+    + id : str
+    + plan_id : str
+    + int instalment_number
+    + date due_date
+    + Decimal amount
+    + Decimal paid_amount
+    + Decimal balance
+    + str payment_status
+    + datetime paid_date
+    + int days_overdue
+    + str remarks
+    + is_overdue() : bool
+}
+
+class Payment {
+    + id : str
+    + receipt_number : str
+    + plan_id : str
+    + schedule_id : str
+    + sale_id : str
+    + invoice_number : str
+    + customer_id : str
+    + datetime payment_date
+    + float payment_amount
+    + str payment_type
+    + str payment_method
+    + str reference_number
+    + str bank_name
+    + str transaction_id
+    + str remarks
+    + int received_by
+    + str payment_status
+    + status() : str
+}
+
+class PaymentReceipt {
+    + id : str
+    + receipt_number : str
+    + payment_id : str
+    + invoice_number : str
+    + customer_id : str
+    + datetime receipt_date
+    + Decimal amount_received
+    + str payment_method
+    + int generated_by
+    + generate_pdf() : str
+}
+
+class CustomerLedger {
+    + id : str
+    + customer_id : str
+    + str transaction_type
+    + str reference_id
+    + str description
+    + Decimal debit
+    + Decimal credit
+    + Decimal balance
+    + datetime transaction_date
+    + calculate_balance() : Decimal
+}
+
+class Setting {
+    + str key
+    + str value
+    + {static} get_val(key: str, default: str) : str
+    + {static} set_val(key: str, value: str) : void
+}
+
+%% Relationships
+Category "1" --> "0..*" Product : groups
+Brand "1" --> "0..*" Product : manufactures
+
+Product "1" --> "0..*" InventoryMovement : adjusts
+Product "1" --> "0..*" SaleItem : lists
+
+Admin "1" --> "0..*" InventoryMovement : logs
+Admin "1" --> "0..*" Sale : creates
+Admin "1" --> "0..*" Payment : receives
+
+Customer "1" --> "0..*" Sale : checkouts
+Customer "1" --> "0..*" InstalmentPlan : pays
+Customer "1" --> "0..*" CustomerLedger : bills
+
+Sale "1" --> "0..*" SaleItem : contains
+Sale "1" --> "0..1" InstalmentPlan : triggers
+
+InstalmentPlan "1" --> "0..*" InstalmentSchedule : breaks
+InstalmentPlan "1" --> "0..*" Payment : collects
+
+InstalmentSchedule "1" --> "0..*" Payment : bills
+
+Payment "1" --> "1" PaymentReceipt : copies
+
+@enduml

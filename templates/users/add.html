@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Create User{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <a href="{{ url_for('users.index') }}" class="btn btn-link text-decoration-none text-muted p-0 mb-2 d-inline-flex align-items-center">
+            <i class="bi bi-arrow-left me-1"></i> Back to Users List
+        </a>
+        <h1 class="h3 fw-bold mb-1">Create User Account</h1>
+        <p class="text-muted mb-0">Fill in details to provision a new operator profile with appropriate access permissions.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-lg-8">
+        <!-- Add User Form Card -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Profile Details</h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <!-- Full Name -->
+                        <div class="col-md-6">
+                            {{ form.full_name.label(class="form-label text-sm fw-medium") }}
+                            {% if form.full_name.errors %}
+                                {{ form.full_name(class="form-control text-sm is-invalid", placeholder="John Doe") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.full_name.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.full_name(class="form-control text-sm", placeholder="John Doe") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            {{ form.username.label(class="form-label text-sm fw-medium") }}
+                            {% if form.username.errors %}
+                                {{ form.username(class="form-control text-sm is-invalid", placeholder="johndoe") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.username.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.username(class="form-control text-sm", placeholder="johndoe") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            {{ form.email.label(class="form-label text-sm fw-medium") }}
+                            {% if form.email.errors %}
+                                {{ form.email(class="form-control text-sm is-invalid", placeholder="john@example.com") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.email.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.email(class="form-control text-sm", placeholder="john@example.com") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="col-md-6">
+                            {{ form.phone.label(class="form-label text-sm fw-medium") }}
+                            {% if form.phone.errors %}
+                                {{ form.phone(class="form-control text-sm is-invalid", placeholder="+919876543210") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.phone.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.phone(class="form-control text-sm", placeholder="+919876543210") }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Access & Permissions</h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <!-- System Role Selection -->
+                        <div class="col-md-6">
+                            {{ form.role_id.label(class="form-label text-sm fw-medium") }}
+                            {% if form.role_id.errors %}
+                                {{ form.role_id(class="form-select text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.role_id.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.role_id(class="form-select text-sm") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Status Selection -->
+                        <div class="col-md-6">
+                            {{ form.status.label(class="form-label text-sm fw-medium") }}
+                            {% if form.status.errors %}
+                                {{ form.status(class="form-select text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.status.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.status(class="form-select text-sm") }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Security & Identity</h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <!-- Password -->
+                        <div class="col-md-6">
+                            {{ form.password.label(class="form-label text-sm fw-medium") }}
+                            {% if form.password.errors %}
+                                {{ form.password(class="form-control text-sm is-invalid", placeholder="••••••••") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.password.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.password(class="form-control text-sm", placeholder="••••••••") }}
+                            {% endif %}
+                            <div class="form-text text-xs text-muted">
+                                Minimum 8 characters: uppercase, lowercase, digit, and special char.
+                            </div>
+                        </div>
+
+                        <!-- Profile Image -->
+                        <div class="col-md-6">
+                            {{ form.profile_image.label(class="form-label text-sm fw-medium") }}
+                            {% if form.profile_image.errors %}
+                                {{ form.profile_image(class="form-control text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.profile_image.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.profile_image(class="form-control text-sm") }}
+                            {% endif %}
+                            <div class="form-text text-xs text-muted">PNG, JPG, or JPEG format only.</div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="border-top pt-4 d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('users.index') }}" class="btn btn-light rounded-pill px-4 text-sm">Cancel</a>
+                        {{ form.submit(class="btn btn-primary rounded-pill px-4 text-sm shadow-sm") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

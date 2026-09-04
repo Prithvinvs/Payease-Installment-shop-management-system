@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Barcodes - {{ product.product_code }}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #ffffff;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #333333;
+            padding: 20px;
+        }
+        
+        .label-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .label-card {
+            border: 1px dashed #cccccc;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            background: #ffffff;
+            page-break-inside: avoid;
+        }
+        
+        .store-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #2563EB;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        
+        .prod-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+        
+        .price-tag {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #dc2626;
+            margin-top: 4px;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .label-card {
+                border: 1px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Print Control Bar (Hidden when printing) -->
+    <div class="container-fluid no-print mb-4 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+        <span class="text-sm text-secondary"><i class="bi bi-info-circle me-1"></i>Barcode label sheet preview. Layout scales 24 labels per sheet.</span>
+        <div>
+            <a href="{{ url_for('products.detail', id=product.id) }}" class="btn btn-sm btn-secondary px-3 rounded-pill me-2">Back to Details</a>
+            <button onclick="window.print()" class="btn btn-sm btn-primary px-3 rounded-pill">Print Labels</button>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="text-center no-print">
+            <h4 class="fw-bold">Barcode Label Sheet</h4>
+            <p class="text-muted text-xs">Product: <strong>{{ product.product_name }} ({{ product.product_code }})</strong></p>
+        </div>
+        
+        <!-- Grid layout (24 labels: 3 columns x 8 rows) -->
+        <div class="label-grid">
+            {% for i in range(24) %}
+            <div class="label-card">
+                <div class="store-title">PayEase</div>
+                <div class="prod-name">{{ product.product_name }}</div>
+                
+                <div>
+                    <svg class="barcode-item" data-code="{{ product.barcode }}" style="max-height: 48px; max-width: 100%;"></svg>
+                </div>
+                
+                <div class="price-tag">₹{{ "{:,.2f}".format(product.selling_price) }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Generate barcodes on load and auto print -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script>
+        window.onload = function() {
+            // Render all barcode items
+            const items = document.querySelectorAll('.barcode-item');
+            items.forEach(el => {
+                const code = el.getAttribute('data-code');
+                JsBarcode(el, code, {
+                    format: "CODE128",
+                    width: 1.2,
+                    height: 32,
+                    displayValue: true,
+                    fontSize: 10,
+                    margin: 2
+                });
+            });
+            
+            // Auto open print dialog
+            setTimeout(function() {
+                window.print();
+            }, 600);
+        };
+    </script>
+</body>
+</html>

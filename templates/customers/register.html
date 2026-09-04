@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Customer{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('customers.index') }}" class="text-decoration-none text-muted">Customers</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Register</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0">Register Credit Customer</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 col-xl-9">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <form action="{{ url_for('customers.register') }}" method="POST" enctype="multipart/form-data">
+                    {{ form.csrf_token }}
+                    
+                    <!-- Section 1: Personal Information -->
+                    <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-person me-2 text-primary"></i>Personal Information</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-xs fw-medium text-muted">First Name <span class="text-danger">*</span></label>
+                            {{ form.first_name(class="form-control text-sm" + (" is-invalid" if form.first_name.errors else ""), placeholder="Enter first name") }}
+                            {% for error in form.first_name.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-xs fw-medium text-muted">Last Name <span class="text-danger">*</span></label>
+                            {{ form.last_name(class="form-control text-sm" + (" is-invalid" if form.last_name.errors else ""), placeholder="Enter last name") }}
+                            {% for error in form.last_name.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-xs fw-medium text-muted">Gender <span class="text-danger">*</span></label>
+                            {{ form.gender(class="form-select text-sm" + (" is-invalid" if form.gender.errors else "")) }}
+                            {% for error in form.gender.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-xs fw-medium text-muted">Date of Birth <span class="text-danger">*</span></label>
+                            {{ form.date_of_birth(class="form-control text-sm" + (" is-invalid" if form.date_of_birth.errors else ""), type="date") }}
+                            {% for error in form.date_of_birth.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Contact Information -->
+                    <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-telephone me-2 text-success"></i>Contact Details</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-xs fw-medium text-muted">Mobile Number <span class="text-danger">*</span></label>
+                            {{ form.phone_number(class="form-control text-sm" + (" is-invalid" if form.phone_number.errors else ""), placeholder="e.g. +919876543210") }}
+                            {% for error in form.phone_number.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-xs fw-medium text-muted">Alternate Mobile Number</label>
+                            {{ form.alternate_phone(class="form-control text-sm" + (" is-invalid" if form.alternate_phone.errors else ""), placeholder="e.g. +919876543211") }}
+                            {% for error in form.alternate_phone.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-xs fw-medium text-muted">Email Address</label>
+                            {{ form.email(class="form-control text-sm" + (" is-invalid" if form.email.errors else ""), placeholder="e.g. customer@example.com") }}
+                            {% for error in form.email.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Billing Address -->
+                    <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-geo-alt me-2 text-warning"></i>Billing Address</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label text-xs fw-medium text-muted">Address Line 1 <span class="text-danger">*</span></label>
+                            {{ form.address_line1(class="form-control text-sm" + (" is-invalid" if form.address_line1.errors else ""), placeholder="Street address, P.O. Box, etc.") }}
+                            {% for error in form.address_line1.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-xs fw-medium text-muted">Address Line 2</label>
+                            {{ form.address_line2(class="form-control text-sm" + (" is-invalid" if form.address_line2.errors else ""), placeholder="Apartment, suite, unit, building, floor, etc.") }}
+                            {% for error in form.address_line2.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label class="form-label text-xs fw-medium text-muted">City <span class="text-danger">*</span></label>
+                            {{ form.city(class="form-control text-sm" + (" is-invalid" if form.city.errors else ""), placeholder="City") }}
+                            {% for error in form.city.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label class="form-label text-xs fw-medium text-muted">State <span class="text-danger">*</span></label>
+                            {{ form.state(class="form-control text-sm" + (" is-invalid" if form.state.errors else ""), placeholder="State") }}
+                            {% for error in form.state.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label class="form-label text-xs fw-medium text-muted">Postal Code <span class="text-danger">*</span></label>
+                            {{ form.postal_code(class="form-control text-sm" + (" is-invalid" if form.postal_code.errors else ""), placeholder="Pin Code") }}
+                            {% for error in form.postal_code.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-sm-6 col-md-3">
+                            <label class="form-label text-xs fw-medium text-muted">Country <span class="text-danger">*</span></label>
+                            {{ form.country(class="form-control text-sm" + (" is-invalid" if form.country.errors else "")) }}
+                            {% for error in form.country.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Additional details & Photo Upload -->
+                    <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="bi bi-patch-plus me-2 text-info"></i>Additional Information</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-xs fw-medium text-muted">Occupation</label>
+                            {{ form.occupation(class="form-control text-sm" + (" is-invalid" if form.occupation.errors else ""), placeholder="e.g. Business Owner, Engineer") }}
+                            {% for error in form.occupation.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-xs fw-medium text-muted">Aadhaar Number (12 digits)</label>
+                            {{ form.aadhaar_number(class="form-control text-sm" + (" is-invalid" if form.aadhaar_number.errors else ""), placeholder="e.g. 123456789012") }}
+                            {% for error in form.aadhaar_number.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-xs fw-medium text-muted">Profile Photo (Format: JPG, PNG, WEBP. Max: 5MB)</label>
+                            {{ form.profile_photo(class="form-control text-xs" + (" is-invalid" if form.profile_photo.errors else ""), type="file") }}
+                            {% for error in form.profile_photo.errors %}
+                            <div class="invalid-feedback text-xs">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-xs fw-medium text-muted">Additional Notes</label>
+                            {{ form.notes(class="form-control text-sm", rows=3, placeholder="Notes about credit score, guarantees, etc.") }}
+                        </div>
+                    </div>
+
+                    <div class="text-end border-top pt-4">
+                        <a href="{{ url_for('customers.index') }}" class="btn btn-sm btn-light border px-4 rounded-pill me-2">Cancel</a>
+                        <button type="submit" class="btn btn-sm btn-primary px-4 rounded-pill">Save & Register</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales History Directory - PayEase{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Sales Directory</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Sales Directory</h1>
+    </div>
+    <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('sales.pos') }}" class="btn btn-primary btn-sm px-3 rounded-pill">
+            <i class="bi bi-cart3 me-1.5"></i>POS Billing Workspace
+        </a>
+    </div>
+</div>
+
+<!-- Date and Status Quick filters -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 text-sm">
+            <div class="d-flex flex-wrap gap-1.5">
+                <a href="{{ url_for('sales.index') }}" class="btn btn-xs rounded-pill {% if not current_filter %}btn-primary{% else %}btn-light border{% endif %}">All Invoices</a>
+                <a href="{{ url_for('sales.index', filter='today') }}" class="btn btn-xs rounded-pill {% if current_filter == 'today' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">Today</a>
+                <a href="{{ url_for('sales.index', filter='this_week') }}" class="btn btn-xs rounded-pill {% if current_filter == 'this_week' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">This Week</a>
+                <a href="{{ url_for('sales.index', filter='this_month') }}" class="btn btn-xs rounded-pill {% if current_filter == 'this_month' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">This Month</a>
+                <a href="{{ url_for('sales.index', filter='paid') }}" class="btn btn-xs rounded-pill {% if current_filter == 'paid' %}btn-success text-white{% else %}btn-light border{% endif %}">Fully Paid</a>
+                <a href="{{ url_for('sales.index', filter='pending') }}" class="btn btn-xs rounded-pill {% if current_filter == 'pending' %}btn-warning text-dark{% else %}btn-light border{% endif %}">Pending Collections</a>
+                <a href="{{ url_for('sales.index', filter='cancelled') }}" class="btn btn-xs rounded-pill {% if current_filter == 'cancelled' %}btn-danger text-white{% else %}btn-light border{% endif %}">Cancelled</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Invoices Grid -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-sm" id="salesTable">
+                <thead class="bg-light text-xs text-muted uppercase">
+                    <tr>
+                        <th scope="col" class="ps-4">Invoice No</th>
+                        <th scope="col">Date Issued</th>
+                        <th scope="col">Customer</th>
+                        <th scope="col" class="text-end">Grand Total</th>
+                        <th scope="col" class="text-end">Down Payment</th>
+                        <th scope="col" class="text-end">Remaining Dues</th>
+                        <th scope="col">Payment Status</th>
+                        <th scope="col">Invoice Status</th>
+                        <th scope="col" class="text-end pe-4" style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sales %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">{{ s.invoice_number }}</td>
+                        <td class="text-muted text-xs">{{ s.sale_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('customers.profile', id=s.customer_id) }}" class="fw-semibold text-dark text-decoration-none d-block">
+                                {{ s.customer.full_name }}
+                            </a>
+                            <span class="text-xs text-muted">Code: {{ s.customer.customer_code }}</span>
+                        </td>
+                        <td class="fw-bold text-dark text-end">₹{{ "{:,.2f}".format(s.grand_total) }}</td>
+                        <td class="text-muted text-end">₹{{ "{:,.2f}".format(s.down_payment) }}</td>
+                        <td class="fw-semibold text-danger text-end">₹{{ "{:,.2f}".format(s.remaining_balance) }}</td>
+                        <td>
+                            {% if s.payment_status == 'paid' %}
+                            <span class="badge bg-success-light text-success rounded-pill text-xs">Fully Paid</span>
+                            {% elif s.payment_status == 'partial' %}
+                            <span class="badge bg-warning-light text-warning rounded-pill text-xs">Partial</span>
+                            {% else %}
+                            <span class="badge bg-danger-light text-danger rounded-pill text-xs">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if s.sale_status == 'completed' %}
+                            <span class="badge bg-success-light text-success rounded-pill text-xs">Confirmed</span>
+                            {% else %}
+                            <span class="badge bg-danger-light text-danger rounded-pill text-xs">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-xs border rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 text-sm">
+                                    <li><a class="dropdown-item py-2" href="{{ url_for('sales.invoice_detail', id=s.id) }}"><i class="bi bi-eye me-2 text-primary"></i>View Invoice</a></li>
+                                    <li><a class="dropdown-item py-2" href="{{ url_for('sales.invoice_print', id=s.id) }}"><i class="bi bi-printer me-2 text-muted"></i>Print Invoice</a></li>
+                                    {% if current_user.role.role_name in ['Super Admin', 'Admin'] and s.sale_status != 'cancelled' %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button type="button" onclick="cancelInvoice('{{ s.id }}')" class="dropdown-item py-2 text-danger"><i class="bi bi-x-circle me-2"></i>Cancel Sale</button>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#salesTable').DataTable({
+            "order": [[1, "desc"]],
+            "pageLength": 10
+        });
+    });
+
+    function cancelInvoice(id) {
+        if (confirm("Are you sure you want to cancel this invoice? This will restore product stock levels and cancel associated instalment plans!")) {
+            $.ajax({
+                url: `/api/sales/${id}`,
+                type: 'DELETE',
+                success: function(response) {
+                    alert(response.message);
+                    window.location.reload();
+                },
+                error: function(xhr) {
+                    const err = xhr.responseJSON ? xhr.responseJSON.error : "Failed to cancel invoice.";
+                    alert("Error: " + err);
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

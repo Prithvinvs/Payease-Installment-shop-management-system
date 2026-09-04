@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Valuation & Reports - PayEase{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('products.index') }}" class="text-decoration-none text-muted">Products & Inventory</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Inventory Reports</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Inventory Reports & Valuation</h1>
+    </div>
+</div>
+
+<!-- Valuation Summary Widgets -->
+<div class="row g-3 mb-4 text-sm">
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2.5">
+        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 text-center">
+            <h6 class="text-muted text-xs uppercase mb-1">Total Products</h6>
+            <h3 class="fw-bold mb-0 text-dark">{{ total_items_count }}</h3>
+            <small class="text-muted text-xs">Unique lines</small>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2.5">
+        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 text-center">
+            <h6 class="text-muted text-xs uppercase mb-1">Low Stock Lines</h6>
+            <h3 class="fw-bold mb-0 text-warning">{{ low_stock_count }}</h3>
+            <small class="text-muted text-xs">Alert threshold</small>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2.5">
+        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 text-center">
+            <h6 class="text-muted text-xs uppercase mb-1">Out of Stock</h6>
+            <h3 class="fw-bold mb-0 text-danger">{{ out_of_stock_count }}</h3>
+            <small class="text-muted text-xs">Empty lines</small>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-primary text-white p-3 h-100">
+            <h6 class="text-white-50 text-xs uppercase mb-1">Asset Value (Cost)</h6>
+            <h3 class="fw-bold mb-1">₹{{ "{:,.2f}".format(total_purchase_value) }}</h3>
+            <small class="text-white-50 text-xs">Based on purchase cost</small>
+        </div>
+    </div>
+    
+    <div class="col-12 col-sm-6 col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-success text-white p-3 h-100">
+            <h6 class="text-white-50 text-xs uppercase mb-1">Asset Value (Retail)</h6>
+            <h3 class="fw-bold mb-1">₹{{ "{:,.2f}".format(total_selling_value) }}</h3>
+            <small class="text-white-50 text-xs">Based on selling price</small>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for categorized report lists -->
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <ul class="nav nav-tabs border-bottom mb-3 text-sm fw-medium" id="reportTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="valuation-tab" data-bs-toggle="tab" data-bs-target="#valuation-pane" type="button" role="tab" aria-controls="valuation-pane" aria-selected="true">
+                            <i class="bi bi-currency-dollar me-1"></i>Inventory Valuation
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="low-tab" data-bs-toggle="tab" data-bs-target="#low-pane" type="button" role="tab" aria-controls="low-pane" aria-selected="false">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Low Stock items
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="empty-tab" data-bs-toggle="tab" data-bs-target="#empty-pane" type="button" role="tab" aria-controls="empty-pane" aria-selected="false">
+                            <i class="bi bi-x-circle me-1"></i>Out of Stock items
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="reportTabContent">
+                    <!-- Valuation report tab -->
+                    <div class="tab-pane fade show active" id="valuation-pane" role="tabpanel" aria-labelledby="valuation-tab" tabindex="0">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-xs text-muted">Complete stock holdings valuation listing</span>
+                            {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+                            <div>
+                                <a href="{{ url_for('inventory.export_report', report_type='valuation', format_type='excel') }}" class="btn btn-xs btn-outline-success"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+                                <a href="{{ url_for('inventory.export_report', report_type='valuation', format_type='csv') }}" class="btn btn-xs btn-outline-primary"><i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 text-sm" id="valuationTable">
+                                <thead class="bg-light text-xs text-muted uppercase">
+                                    <tr>
+                                        <th>Product Code</th>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Brand</th>
+                                        <th class="text-end">Cost Price</th>
+                                        <th class="text-end">Retail Price</th>
+                                        <th class="text-center">Stock</th>
+                                        <th class="text-end">Holdings Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in products %}
+                                    <tr>
+                                        <td class="fw-bold text-xs">{{ p.product_code }}</td>
+                                        <td><a href="{{ url_for('products.detail', id=p.id) }}" class="fw-semibold text-primary text-decoration-none">{{ p.product_name }}</a></td>
+                                        <td><span class="badge bg-light text-dark text-xs border rounded-pill">{{ p.category.name }}</span></td>
+                                        <td>{{ p.brand.brand_name }}</td>
+                                        <td class="text-end">₹{{ "{:,.2f}".format(p.purchase_price) }}</td>
+                                        <td class="text-end">₹{{ "{:,.2f}".format(p.selling_price) }}</td>
+                                        <td class="text-center fw-bold">{{ p.current_stock }}</td>
+                                        <td class="text-end fw-bold text-dark">₹{{ "{:,.2f}".format(p.stock_value) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Low Stock report tab -->
+                    <div class="tab-pane fade" id="low-pane" role="tabpanel" aria-labelledby="low-tab" tabindex="0">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-xs text-muted">Items running below minimum safety threshold limits</span>
+                            {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+                            <div>
+                                <a href="{{ url_for('inventory.export_report', report_type='low_stock', format_type='excel') }}" class="btn btn-xs btn-outline-success"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+                                <a href="{{ url_for('inventory.export_report', report_type='low_stock', format_type='csv') }}" class="btn btn-xs btn-outline-primary"><i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 text-sm" id="lowStockTable">
+                                <thead class="bg-light text-xs text-muted uppercase">
+                                    <tr>
+                                        <th>Product Code</th>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Brand</th>
+                                        <th class="text-center">Current Stock</th>
+                                        <th class="text-center">Min Threshold</th>
+                                        <th class="text-end">Selling Price</th>
+                                        <th class="text-end">Asset Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in products %}
+                                        {% if p.is_low_stock %}
+                                        <tr>
+                                            <td class="fw-bold text-xs">{{ p.product_code }}</td>
+                                            <td><a href="{{ url_for('products.detail', id=p.id) }}" class="fw-semibold text-primary text-decoration-none">{{ p.product_name }}</a></td>
+                                            <td><span class="badge bg-light text-dark text-xs border rounded-pill">{{ p.category.name }}</span></td>
+                                            <td>{{ p.brand.brand_name }}</td>
+                                            <td class="text-center fw-bold text-warning">{{ p.current_stock }}</td>
+                                            <td class="text-center text-muted">{{ p.minimum_stock }}</td>
+                                            <td class="text-end">₹{{ "{:,.2f}".format(p.selling_price) }}</td>
+                                            <td class="text-end fw-bold">₹{{ "{:,.2f}".format(p.stock_value) }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Out of stock report tab -->
+                    <div class="tab-pane fade" id="empty-pane" role="tabpanel" aria-labelledby="empty-tab" tabindex="0">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-xs text-muted">Inventory items with 0 balance (Immediate reordering required)</span>
+                            {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+                            <div>
+                                <a href="{{ url_for('inventory.export_report', report_type='out_of_stock', format_type='excel') }}" class="btn btn-xs btn-outline-success"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+                                <a href="{{ url_for('inventory.export_report', report_type='out_of_stock', format_type='csv') }}" class="btn btn-xs btn-outline-primary"><i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 text-sm" id="emptyStockTable">
+                                <thead class="bg-light text-xs text-muted uppercase">
+                                    <tr>
+                                        <th>Product Code</th>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Brand</th>
+                                        <th class="text-center">Stock Level</th>
+                                        <th class="text-end">Purchase Price</th>
+                                        <th class="text-end">Selling Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in products %}
+                                        {% if p.is_out_of_stock %}
+                                        <tr>
+                                            <td class="fw-bold text-xs text-danger">{{ p.product_code }}</td>
+                                            <td><a href="{{ url_for('products.detail', id=p.id) }}" class="fw-semibold text-danger text-decoration-none">{{ p.product_name }}</a></td>
+                                            <td><span class="badge bg-light text-dark text-xs border rounded-pill">{{ p.category.name }}</span></td>
+                                            <td>{{ p.brand.brand_name }}</td>
+                                            <td class="text-center fw-bold text-danger">0</td>
+                                            <td class="text-end">₹{{ "{:,.2f}".format(p.purchase_price) }}</td>
+                                            <td class="text-end">₹{{ "{:,.2f}".format(p.selling_price) }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#valuationTable').DataTable({
+            "order": [[7, "desc"]],
+            "pageLength": 10
+        });
+        
+        $('#lowStockTable').DataTable({
+            "order": [[4, "asc"]],
+            "pageLength": 10
+        });
+        
+        $('#emptyStockTable').DataTable({
+            "order": [[1, "asc"]],
+            "pageLength": 10
+        });
+    });
+</script>
+{% endblock %}

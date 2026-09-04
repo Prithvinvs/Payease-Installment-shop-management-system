@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Instalment Plan - {{ plan.plan_number }}{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('instalments.index') }}" class="text-decoration-none text-muted">Instalment Plans</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">{{ plan.plan_number }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Plan Details: {{ plan.plan_number }}</h1>
+    </div>
+    <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end gap-2 text-sm">
+        <a href="{{ url_for('instalments.print_schedule', id=plan.id) }}" target="_blank" class="btn btn-light border btn-sm px-3 rounded-pill">
+            <i class="bi bi-printer me-1 text-muted"></i>Print Schedule
+        </a>
+        {% if current_user.role.role_name in ['Super Admin', 'Admin'] and plan.status != 'completed' and plan.status != 'cancelled' %}
+        <button type="button" class="btn btn-primary btn-sm px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#rescheduleModal">
+            <i class="bi bi-calendar-event me-1"></i>Reschedule Plan
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Progress Summary Section -->
+<div class="row g-4 mb-4 text-sm">
+    <!-- Progress Indicator Card -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">Repayment Progress</h6>
+                    <p class="text-muted text-xs mb-3">Overall progress of EMI schedules collections</p>
+                    
+                    {% set paid_pct = (plan.paid_amount / plan.remaining_balance * 100) | round(1) if plan.remaining_balance > 0 else 0 %}
+                    <div class="d-flex justify-content-between align-items-center mb-1.5 text-xs text-secondary">
+                        <span>Cleared: ₹{{ "{:,.2f}".format(plan.paid_amount) }} ({{ paid_pct }}%)</span>
+                        <span>Outstanding: ₹{{ "{:,.2f}".format(plan.outstanding_amount) }}</span>
+                    </div>
+                    <div class="progress rounded-pill mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-success rounded-pill" role="progressbar" style="width: {{ paid_pct }}%" aria-valuenow="{{ paid_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                
+                <div class="row g-3 text-xs mt-2">
+                    <div class="col-6 col-md-3">
+                        <div class="bg-light p-2.5 rounded-3 text-center">
+                            <span class="text-muted d-block mb-1">Total EMI Count</span>
+                            <strong class="text-dark fs-5">{{ plan.number_of_instalments }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="bg-success-light p-2.5 rounded-3 text-center">
+                            <span class="text-success d-block mb-1">Paid Months</span>
+                            <strong class="text-success fs-5">{{ plan.completed_count }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="bg-primary-light p-2.5 rounded-3 text-center">
+                            <span class="text-primary d-block mb-1">Pending Months</span>
+                            <strong class="text-primary fs-5">{{ plan.pending_count }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="bg-danger-light p-2.5 rounded-3 text-center">
+                            <span class="text-danger d-block mb-1">Overdue Months</span>
+                            <strong class="text-danger fs-5">{{ plan.overdue_count }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Balance Summary KPI Card -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary text-white">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <span class="text-white-50 text-xs uppercase fw-bold tracking-wider">Outstanding Dues</span>
+                    <h2 class="fw-extrabold text-white mb-2 mt-1">₹{{ "{:,.2f}".format(plan.outstanding_amount) }}</h2>
+                    <span class="badge bg-white-20 rounded-pill text-xs fw-semibold">EMI: ₹{{ "{:,.2f}".format(plan.monthly_emi) }} / mo</span>
+                </div>
+                <div class="border-top border-white-10 pt-3 mt-4 text-xs">
+                    <div class="d-flex justify-content-between mb-1 text-white-80">
+                        <span>First Due:</span>
+                        <strong>{{ plan.first_due_date.strftime('%d-%b-%Y') }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-80">
+                        <span>Maturity End:</span>
+                        <strong>{{ plan.last_due_date.strftime('%d-%b-%Y') }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer & Invoice Information Cards -->
+<div class="row g-4 mb-4 text-sm">
+    <!-- Customer Demographics Card -->
+    <div class="col-12 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person text-muted me-2"></i>Customer Account Profile</h6>
+                <div class="row g-2">
+                    <div class="col-4 text-muted text-xs">Full Name:</div>
+                    <div class="col-8 fw-semibold text-dark">{{ plan.customer.full_name }}</div>
+                    
+                    <div class="col-4 text-muted text-xs">Customer Code:</div>
+                    <div class="col-8 text-dark">{{ plan.customer.customer_code }}</div>
+                    
+                    <div class="col-4 text-muted text-xs">Phone Number:</div>
+                    <div class="col-8 text-dark">{{ plan.customer.phone_number }}</div>
+                    
+                    <div class="col-4 text-muted text-xs">Aadhaar Number:</div>
+                    <div class="col-8 text-dark">{{ plan.customer.aadhaar_number or 'N/A' }}</div>
+                    
+                    <div class="col-4 text-muted text-xs">Home Address:</div>
+                    <div class="col-8 text-dark">
+                        {{ plan.customer.address_line1 }}, {{ plan.customer.city }}, {{ plan.customer.state }} - {{ plan.customer.postal_code }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sale Parameters Invoice Card -->
+    <div class="col-12 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-receipt text-muted me-2"></i>Invoice Information</h6>
+                <div class="row g-2">
+                    <div class="col-4 text-muted text-xs">Invoice Number:</div>
+                    <div class="col-8 fw-semibold text-primary">{{ plan.invoice_number }}</div>
+                    
+                    <div class="col-4 text-muted text-xs">Sale Date:</div>
+                    <div class="col-8 text-dark">{{ plan.sale.sale_date.strftime('%Y-%m-%d %H:%M') }}</div>
+                    
+                    <div class="col-4 text-muted text-xs">Products Ordered:</div>
+                    <div class="col-8 text-dark">
+                        {% for item in plan.sale.items %}
+                        <span class="d-block fw-semibold text-xs text-dark">• {{ item.product.product_name }} (Qty: {{ item.quantity }})</span>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-4 text-muted text-xs">Down Payment Paid:</div>
+                    <div class="col-8 text-success fw-bold">₹{{ "{:,.2f}".format(plan.down_payment) }}</div>
+                    
+                    <div class="col-4 text-muted text-xs">Plan Start Date:</div>
+                    <div class="col-8 text-dark">{{ plan.start_date.strftime('%Y-%m-%d') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EMI Schedule Table Breakdown -->
+<div class="card border-0 shadow-sm rounded-4 mb-5 text-sm">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0 text-dark">Repayment Schedule Breakdown</h5>
+        <p class="text-muted text-xs mb-0">Detailed list of billing dates and payment collections states</p>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table align-middle text-sm" id="scheduleTable">
+                <thead class="bg-light text-xs text-muted uppercase text-center">
+                    <tr>
+                        <th scope="col" style="width: 50px;">#</th>
+                        <th scope="col" class="text-start">Due Date</th>
+                        <th scope="col" class="text-end">EMI Amount</th>
+                        <th scope="col" class="text-end">Paid Amount</th>
+                        <th scope="col" class="text-end">Remaining Balance</th>
+                        <th scope="col">Payment Status</th>
+                        <th scope="col" class="text-center">Days Overdue</th>
+                        <th scope="col" class="text-start">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in plan.schedules %}
+                    <tr class="{% if item.payment_status == 'overdue' %}table-danger-light{% endif %}">
+                        <td class="text-center fw-bold">{{ item.instalment_number }}</td>
+                        <td>
+                            <strong class="text-dark d-block">{{ item.due_date.strftime('%d-%b-%Y') }}</strong>
+                            <small class="text-muted text-xs">Index ID: S-{{ item.id[:8].upper() }}</small>
+                        </td>
+                        <td class="text-end fw-bold text-dark">₹{{ "{:,.2f}".format(item.amount) }}</td>
+                        <td class="text-end text-success fw-semibold">₹{{ "{:,.2f}".format(item.paid_amount) }}</td>
+                        <td class="text-end fw-bold text-danger">₹{{ "{:,.2f}".format(item.balance) }}</td>
+                        <td class="text-center">
+                            {% if item.payment_status == 'paid' %}
+                            <span class="badge bg-success-light text-success rounded-pill text-xs">Paid</span>
+                            {% elif item.payment_status == 'partially_paid' %}
+                            <span class="badge bg-warning-light text-warning rounded-pill text-xs">Partial</span>
+                            {% elif item.payment_status == 'overdue' %}
+                            <span class="badge bg-danger text-white rounded-pill text-xs">Overdue</span>
+                            {% else %}
+                            <span class="badge bg-primary-light text-primary rounded-pill text-xs">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.days_overdue > 0 %}
+                            <strong class="text-danger">{{ item.days_overdue }} Days</strong>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-xs text-muted text-start">{{ item.remarks or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Reschedule plan modal overlay -->
+{% if current_user.role.role_name in ['Super Admin', 'Admin'] and plan.status != 'completed' and plan.status != 'cancelled' %}
+<div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered text-sm">
+        <div class="modal-content border-0 shadow rounded-4">
+            <form id="reschedulePlanForm" onsubmit="submitReschedule(event)">
+                <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                <div class="modal-header border-0 pt-4 px-4 pb-0">
+                    <h5 class="modal-title fw-bold text-dark" id="rescheduleModalLabel">Reschedule Instalment Plan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted text-xs mb-4">Allows shifting due dates or recalculating unpaid balances for this schedule ledger.</p>
+                    
+                    <div class="mb-3">
+                        <label for="fromInstInput" class="form-label text-muted fw-semibold">Start Rescheduling From</label>
+                        <select class="form-select rounded-3 text-sm" id="fromInstInput" required>
+                            {% for item in plan.schedules %}
+                                {% if item.payment_status != 'paid' %}
+                                <option value="{{ item.instalment_number }}">Instalment #{{ item.instalment_number }} (Due: {{ item.due_date.strftime('%Y-%m-%d') }})</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newDueDateInput" class="form-label text-muted fw-semibold">New Due Date for Selected Month</label>
+                        <input type="date" class="form-control rounded-3 text-sm" id="newDueDateInput" required>
+                        <small class="text-muted text-xs mt-1 d-block">Subsequent unpaid EMI months will shift sequentially by 30-day offsets.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newAmountInput" class="form-label text-muted fw-semibold">New Monthly EMI Amount (₹)</label>
+                        <input type="number" class="form-control rounded-3 text-sm" id="newAmountInput" value="{{ plan.monthly_emi }}" min="1" step="1">
+                        <small class="text-muted text-xs mt-1 d-block">Leave unchanged to maintain the current EMI amount of ₹{{ plan.monthly_emi }}.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="rescheduleRemarks" class="form-label text-muted fw-semibold">Rescheduling Remarks / Reason</label>
+                        <textarea class="form-control rounded-3 text-sm" id="rescheduleRemarks" rows="2" placeholder="Explain reasoning (e.g. grace period request, customer rescheduling demand)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4 pt-0">
+                    <button type="button" class="btn btn-light border rounded-pill px-3 text-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 text-sm">Save Reschedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function submitReschedule(e) {
+        e.preventDefault();
+        
+        const payload = {
+            plan_id: $('input[name="plan_id"]').val(),
+            reschedule_from_number: parseInt($('#fromInstInput').val()),
+            new_due_date: $('#newDueDateInput').val(),
+            new_amount: parseFloat($('#newAmountInput').val()) || null,
+            remarks: $('#rescheduleRemarks').val()
+        };
+        
+        // POST to REST API
+        $.ajax({
+            url: '/api/instalments/reschedule',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function(response) {
+                alert(response.message);
+                window.location.reload();
+            },
+            error: function(xhr) {
+                const err = xhr.responseJSON ? xhr.responseJSON.error : "Unknown reschedule error.";
+                alert("Rescheduling Failed: " + err);
+            }
+        });
+    }
+</script>
+{% endblock %}

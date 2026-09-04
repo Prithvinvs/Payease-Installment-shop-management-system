@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 fw-bold mb-1">My Account Settings</h1>
+        <p class="text-muted mb-0">Manage your profile details, upload your avatar, and change your password credentials.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- User Quick Summary Card -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body p-4">
+                <div class="position-relative d-inline-block mb-3">
+                    {% if current_user.profile_image %}
+                        <img src="{{ url_for('static', filename=current_user.profile_image) }}" alt="Avatar" class="avatar object-fit-cover shadow-sm" style="width: 110px; height: 110px; border-radius: 50%;">
+                    {% else %}
+                        <div class="avatar bg-primary-light text-primary mx-auto shadow-sm" style="width: 110px; height: 110px; border-radius: 50%; font-size: 2.5rem;">
+                            <span class="fw-bold">{{ current_user.full_name[0] | upper }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <h4 class="fw-bold mb-1">{{ current_user.full_name }}</h4>
+                <p class="text-muted text-xs uppercase mb-3">@{{ current_user.username }}</p>
+                <div class="mb-3">
+                    {% if current_user.role.role_name == 'Super Admin' %}
+                        <span class="badge bg-danger-light text-danger px-3 py-1.5 rounded-pill text-xs fw-semibold">Super Admin</span>
+                    {% elif current_user.role.role_name == 'Admin' %}
+                        <span class="badge bg-primary-light text-primary px-3 py-1.5 rounded-pill text-xs fw-semibold">Admin</span>
+                    {% else %}
+                        <span class="badge bg-info-light text-info px-3 py-1.5 rounded-pill text-xs fw-semibold">Staff</span>
+                    {% endif %}
+                </div>
+                <hr>
+                <div class="text-start mt-4 text-sm">
+                    <div class="mb-2"><span class="text-muted text-xs uppercase d-block">Account Status</span><strong class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Active</strong></div>
+                    <div class="mb-2"><span class="text-muted text-xs uppercase d-block">Last Login Session</span><strong>{{ current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else 'Just now' }}</strong></div>
+                    <div><span class="text-muted text-xs uppercase d-block">Joined PayEase</span><strong>{{ current_user.created_at.strftime('%Y-%m-%d') }}</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Forms Column -->
+    <div class="col-12 col-lg-8">
+        <div class="d-flex flex-column gap-4">
+            
+            <!-- Update Profile Details Form Card -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header border-0 bg-transparent pt-4 px-4">
+                    <h5 class="fw-bold mb-0">Personal Profile Details</h5>
+                    <p class="text-muted text-xs mb-0">Keep your personal contact information up to date.</p>
+                </div>
+                <div class="card-body px-4 pb-4 pt-2">
+                    <form method="POST" action="" enctype="multipart/form-data" novalidate>
+                        {{ profile_form.hidden_tag() }}
+                        <input type="hidden" name="form_type" value="profile">
+                        
+                        <div class="row g-3 mb-4">
+                            <!-- Full Name -->
+                            <div class="col-md-12">
+                                {{ profile_form.full_name.label(class="form-label text-sm fw-medium") }}
+                                {% if profile_form.full_name.errors and request.form.get('form_type') == 'profile' %}
+                                    {{ profile_form.full_name(class="form-control text-sm is-invalid") }}
+                                    <div class="invalid-feedback text-xs">
+                                        {% for error in profile_form.full_name.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ profile_form.full_name(class="form-control text-sm") }}
+                                {% endif %}
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                {{ profile_form.email.label(class="form-label text-sm fw-medium") }}
+                                {% if profile_form.email.errors and request.form.get('form_type') == 'profile' %}
+                                    {{ profile_form.email(class="form-control text-sm is-invalid") }}
+                                    <div class="invalid-feedback text-xs">
+                                        {% for error in profile_form.email.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ profile_form.email(class="form-control text-sm") }}
+                                {% endif %}
+                            </div>
+
+                            <!-- Phone Number -->
+                            <div class="col-md-6">
+                                {{ profile_form.phone.label(class="form-label text-sm fw-medium") }}
+                                {% if profile_form.phone.errors and request.form.get('form_type') == 'profile' %}
+                                    {{ profile_form.phone(class="form-control text-sm is-invalid") }}
+                                    <div class="invalid-feedback text-xs">
+                                        {% for error in profile_form.phone.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ profile_form.phone(class="form-control text-sm") }}
+                                {% endif %}
+                            </div>
+
+                            <!-- Change Profile Image -->
+                            <div class="col-md-12">
+                                {{ profile_form.profile_image.label(class="form-label text-sm fw-medium") }}
+                                {% if profile_form.profile_image.errors and request.form.get('form_type') == 'profile' %}
+                                    {{ profile_form.profile_image(class="form-control text-sm is-invalid") }}
+                                    <div class="invalid-feedback text-xs">
+                                        {% for error in profile_form.profile_image.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ profile_form.profile_image(class="form-control text-sm") }}
+                                {% endif %}
+                                <div class="form-text text-xs text-muted">Upload an image file (PNG, JPG, or JPEG). Size is scaled to square automatically.</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            {{ profile_form.submit(class="btn btn-primary rounded-pill px-4 text-sm shadow-sm") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Change Password Form Card -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header border-0 bg-transparent pt-4 px-4">
+                    <h5 class="fw-bold mb-0">Update Account Password</h5>
+                    <p class="text-muted text-xs mb-0">Change your sign-in credentials. Requires entering your current password.</p>
+                </div>
+                <div class="card-body px-4 pb-4 pt-2">
+                    <form method="POST" action="" novalidate>
+                        {{ password_form.hidden_tag() }}
+                        <input type="hidden" name="form_type" value="password">
+                        
+                        <div class="mb-3">
+                            {{ password_form.current_password.label(class="form-label text-sm fw-medium") }}
+                            {% if password_form.current_password.errors and request.form.get('form_type') == 'password' %}
+                                {{ password_form.current_password(class="form-control text-sm is-invalid", placeholder="••••••••") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in password_form.current_password.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ password_form.current_password(class="form-control text-sm", placeholder="••••••••") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <!-- New Password -->
+                            <div class="col-md-6">
+                                {{ password_form.new_password.label(class="form-label text-sm fw-medium") }}
+                                {% if password_form.new_password.errors and request.form.get('form_type') == 'password' %}
+                                    {{ password_form.new_password(class="form-control text-sm is-invalid", placeholder="••••••••") }}
+                                    <div class="invalid-feedback text-xs">
+                                        {% for error in password_form.new_password.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ password_form.new_password(class="form-control text-sm", placeholder="••••••••") }}
+                                {% endif %}
+                                <div class="form-text text-xs text-muted">
+                                    Must be 8-64 characters with uppercase, lowercase, digit, and special char.
+                                </div>
+                            </div>
+                            
+                            <!-- Confirm New Password -->
+                            <div class="col-md-6">
+                                {{ password_form.confirm_password.label(class="form-label text-sm fw-medium") }}
+                                {% if password_form.confirm_password.errors and request.form.get('form_type') == 'password' %}
+                                    {{ password_form.confirm_password(class="form-control text-sm is-invalid", placeholder="••••••••") }}
+                                    <div class="invalid-feedback text-xs">
+                                        {% for error in password_form.confirm_password.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ password_form.confirm_password(class="form-control text-sm", placeholder="••••••••") }}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            {{ password_form.submit(class="btn btn-primary rounded-pill px-4 text-sm shadow-sm") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

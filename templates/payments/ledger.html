@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer ledger Account - {{ customer.full_name }}{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('customers.index') }}" class="text-decoration-none text-muted">Customers</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('customers.profile', id=customer.id) }}" class="text-decoration-none text-muted">{{ customer.full_name }}</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Ledger Statements</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Customer Credit ledger Statement</h1>
+        <p class="text-muted text-xs">Financial debit/credit timeline logs for {{ customer.full_name }} (Account Code: {{ customer.customer_code }})</p>
+    </div>
+</div>
+
+<!-- Balance Summary widgets -->
+<div class="row g-4 mb-4 text-sm">
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 text-center">
+                <span class="text-muted text-xs uppercase d-block mb-1">Total Purchases Dues</span>
+                <strong class="fs-4 text-dark">₹{{ "{:,.2f}".format(customer.total_purchases) }}</strong>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 text-center">
+                <span class="text-success text-xs uppercase d-block mb-1">Total Payments Collected</span>
+                <strong class="fs-4 text-success">₹{{ "{:,.2f}".format(customer.total_payments) }}</strong>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-primary text-white">
+            <div class="card-body p-4 text-center">
+                <span class="text-white-50 text-xs uppercase d-block mb-1">Net Outstanding Balance</span>
+                <strong class="fs-4 text-white">₹{{ "{:,.2f}".format(customer.outstanding_balance) }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ledger Grid table -->
+<div class="card border-0 shadow-sm rounded-4 text-sm">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-dark">Double-Entry transaction logs</h5>
+        <button onclick="window.print()" class="btn btn-sm btn-light border px-3 rounded-pill">
+            <i class="bi bi-printer text-muted me-1"></i>Print Statement
+        </button>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table align-middle text-sm" id="ledgerTable">
+                <thead class="bg-light text-xs text-muted uppercase text-center">
+                    <tr>
+                        <th class="text-start" style="width: 150px;">Transaction Date</th>
+                        <th class="text-start">Reference ID</th>
+                        <th class="text-start">Description / Event Details</th>
+                        <th class="text-end" style="width: 130px;">Debit (Debit Sale)</th>
+                        <th class="text-end" style="width: 130px;">Credit (Collections)</th>
+                        <th class="text-end" style="width: 150px;">Running Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in ledger_entries %}
+                    <tr class="text-center">
+                        <td class="text-start">
+                            <strong class="text-dark d-block">{{ entry.transaction_date.strftime('%d-%b-%Y') }}</strong>
+                            <small class="text-muted text-xs">{{ entry.transaction_date.strftime('%H:%M') }}</small>
+                        </td>
+                        <td class="text-start font-monospace text-xs text-secondary">
+                            Ref-{{ entry.reference_id[:8].upper() }}
+                        </td>
+                        <td class="text-start fw-semibold text-dark">{{ entry.description }}</td>
+                        <td class="text-end text-danger fw-semibold">
+                            {% if entry.debit > 0 %}
+                            +₹{{ "{:,.2f}".format(entry.debit) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-end text-success fw-semibold">
+                            {% if entry.credit > 0 %}
+                            -₹{{ "{:,.2f}".format(entry.credit) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-extrabold {% if entry.balance > 0 %}text-danger{% else %}text-muted{% endif %}">
+                            ₹{{ "{:,.2f}".format(entry.balance) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not ledger_entries %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted p-5">
+                            No ledger line logs found for this customer.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

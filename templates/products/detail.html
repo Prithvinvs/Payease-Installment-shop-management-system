@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.product_name }} - Product Details{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('products.index') }}" class="text-decoration-none text-muted">Products & Inventory</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">{{ product.product_name }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Product Details</h1>
+    </div>
+    <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0 d-flex flex-wrap justify-content-md-end gap-2">
+        <a href="{{ url_for('products.barcode_print', id=product.id) }}" class="btn btn-light border btn-sm px-3 rounded-pill">
+            <i class="bi bi-printer me-1.5 text-muted"></i>Print Barcode Sheet
+        </a>
+        <button type="button" class="btn btn-warning btn-sm px-3 rounded-pill text-dark" data-bs-toggle="modal" data-bs-target="#adjustStockModal">
+            <i class="bi bi-arrow-left-right me-1.5"></i>Adjust Stock
+        </button>
+        {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+        <a href="{{ url_for('products.edit', id=product.id) }}" class="btn btn-primary btn-sm px-3 rounded-pill">
+            <i class="bi bi-pencil me-1.5"></i>Edit Details
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Image and Specs Card -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <div class="text-center pb-4 border-bottom">
+                    {% if product.product_image %}
+                    <img src="{{ url_for('static', filename=product.product_image) }}" alt="Product Image" class="rounded-4 border mb-3 img-fluid shadow-sm" style="max-height: 180px; object-fit: cover;">
+                    {% else %}
+                    <div class="bg-light rounded-4 border d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <i class="bi bi-box text-muted" style="font-size: 3.5rem;"></i>
+                    </div>
+                    {% endif %}
+                    <h5 class="fw-bold mb-1 text-dark">{{ product.product_name }}</h5>
+                    <span class="badge bg-primary-light text-primary px-3 py-1 rounded-pill text-xs fw-semibold">{{ product.product_code }}</span>
+                </div>
+                
+                <div class="pt-4 text-sm text-secondary">
+                    <strong class="text-xs text-muted uppercase d-block mb-3">Product Information</strong>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Category:</span>
+                        <strong class="text-dark">{{ product.category.name }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Brand:</span>
+                        <strong class="text-dark">{{ product.brand.brand_name }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Unit Metric:</span>
+                        <strong class="text-dark">{{ product.unit }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>GST Bracket:</span>
+                        <strong class="text-dark">{{ product.gst_percentage }}%</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Discount Limit:</span>
+                        <strong class="text-dark">{{ product.discount_percentage }}%</strong>
+                    </div>
+                    
+                    {% if product.description %}
+                    <strong class="text-xs text-muted uppercase d-block mb-2 mt-4">Description</strong>
+                    <p class="text-secondary mb-0 lh-sm italic text-xs">"{{ product.description }}"</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Widgets & Barcode/QR panels -->
+    <div class="col-12 col-lg-8">
+        <!-- Summary Cards Grid -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
+                    <h6 class="text-muted text-xs uppercase mb-1">Current Stock</h6>
+                    <h3 class="fw-bold mb-1 text-dark">{{ product.current_stock }}</h3>
+                    <div>
+                        {% if product.stock_status == 'In Stock' %}
+                        <span class="badge bg-success-light text-success text-xs rounded-pill">In Stock</span>
+                        {% elif product.stock_status == 'Low Stock' %}
+                        <span class="badge bg-warning-light text-warning text-xs rounded-pill animate-pulse">Low Stock</span>
+                        {% elif product.stock_status == 'Overstock' %}
+                        <span class="badge bg-info-light text-info text-xs rounded-pill">Overstocked</span>
+                        {% else %}
+                        <span class="badge bg-danger-light text-danger text-xs rounded-pill animate-pulse">Out of Stock</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
+                    <h6 class="text-muted text-xs uppercase mb-1">Selling Price</h6>
+                    <h3 class="fw-bold text-primary mb-1">₹{{ "{:,.2f}".format(product.selling_price) }}</h3>
+                    <small class="text-muted text-xs">Purchase: ₹{{ "{:,.2f}".format(product.purchase_price) }}</small>
+                </div>
+            </div>
+            
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
+                    <h6 class="text-muted text-xs uppercase mb-1">Asset Value</h6>
+                    <h3 class="fw-bold text-success mb-1">₹{{ "{:,.2f}".format(product.stock_value) }}</h3>
+                    <small class="text-muted text-xs">Based on selling price</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Barcode & QR code blocks -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0 text-dark">Barcode & Identification Codes</h5>
+                <p class="text-muted text-xs mb-0">Client-side rendering. Download coordinates tag assets directly</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4 text-center">
+                    <div class="col-12 col-sm-6 border-end">
+                        <span class="text-xs text-muted d-block mb-3">PRODUCT BARCODE (CODE128)</span>
+                        <div class="bg-white p-3 border rounded-3 mb-3 d-inline-block">
+                            <svg id="barcodeCanvas" class="w-100" style="max-height: 80px;"></svg>
+                        </div>
+                        <div>
+                            <button onclick="downloadBarcode()" class="btn btn-xs btn-light border rounded-pill px-3 me-2"><i class="bi bi-download me-1 text-muted"></i>Download Barcode</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-sm-6">
+                        <span class="text-xs text-muted d-block mb-3">PRODUCT QR CODE</span>
+                        <div class="bg-white p-3 border rounded-3 mb-3 d-inline-block">
+                            <canvas id="qrCanvas" style="width: 100px; height: 100px;"></canvas>
+                        </div>
+                        <div>
+                            <button onclick="downloadQR()" class="btn btn-xs btn-light border rounded-pill px-3"><i class="bi bi-download me-1 text-muted"></i>Download QR Code</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory movements list -->
+<div class="card border-0 shadow-sm rounded-4 mb-5">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0 text-dark">Inventory Movement Log</h5>
+        <p class="text-muted text-xs mb-0">Audit history of stock ins, outs, and returns</p>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-sm" id="movementsTable">
+                <thead class="bg-light text-xs text-muted uppercase">
+                    <tr>
+                        <th scope="col">Date Logged</th>
+                        <th scope="col">Movement Type</th>
+                        <th scope="col">Qty Changed</th>
+                        <th scope="col">Previous Stock</th>
+                        <th scope="col">New Stock</th>
+                        <th scope="col">Remarks</th>
+                        <th scope="col">Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if movements %}
+                        {% for m in movements %}
+                        <tr>
+                            <td class="text-muted text-xs">{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if m.movement_type == 'Stock In' %}
+                                <span class="badge bg-success-light text-success rounded-pill text-xs">Stock In</span>
+                                {% elif m.movement_type == 'Stock Out' %}
+                                <span class="badge bg-danger-light text-danger rounded-pill text-xs">Stock Out</span>
+                                {% elif m.movement_type == 'Return' %}
+                                <span class="badge bg-info-light text-info rounded-pill text-xs">Return</span>
+                                {% else %}
+                                <span class="badge bg-warning-light text-warning rounded-pill text-xs">Adjustment</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold text-dark">+{{ m.quantity }}</td>
+                            <td class="text-muted">{{ m.previous_stock }}</td>
+                            <td class="fw-semibold text-dark">{{ m.new_stock }}</td>
+                            <td class="text-muted text-xs italic">{{ m.remarks or '-' }}</td>
+                            <td><span class="badge bg-light text-secondary border px-2 py-1">{{ m.user.username if m.user else 'System' }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="7" class="text-center py-4 text-muted">No stock movement history logged for this product.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Adjustments Modal -->
+<div class="modal fade" id="adjustStockModal" tabindex="-1" aria-labelledby="adjustStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered text-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="adjustStockModalLabel">Adjust Product Inventory</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('inventory.adjust_stock') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <div class="modal-body p-4 text-secondary">
+                    <div class="mb-3 bg-light p-3 rounded rounded-3">
+                        <span class="d-block text-xs uppercase mb-1">Current Inventory balance:</span>
+                        <strong class="text-dark text-base">{{ product.current_stock }} {{ product.unit }}</strong>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="movement_type" class="form-label fw-semibold text-muted">Adjustment Type</label>
+                        <select name="movement_type" id="movement_type" class="form-select rounded-3 text-sm" required>
+                            <option value="Stock In">Stock In (Purchased or added inventory)</option>
+                            <option value="Stock Out">Stock Out (Direct sales, stock reduction)</option>
+                            <option value="Adjustment">Stock Adjustment (Internal modifications)</option>
+                            <option value="Damaged">Damaged Stock (Remove spoiled/damaged items)</option>
+                            <option value="Return">Returned Stock (Customer return to shelves)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label fw-semibold text-muted">Adjustment Quantity</label>
+                        <input type="number" name="quantity" id="quantity" class="form-control rounded-3 text-sm" min="1" placeholder="Enter amount of items..." required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="remarks" class="form-label fw-semibold text-muted">Remarks / Justification</label>
+                        <textarea name="remarks" id="remarks" class="form-control rounded-3 text-sm" rows="3" placeholder="State reason for the inventory change..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light btn-sm px-3 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 rounded-pill">Apply Adjustment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- CDN script tags for client side JS barcodes and QR generation -->
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#movementsTable').DataTable({
+            "order": [[0, "desc"]],
+            "pageLength": 5
+        });
+        
+        // Render Barcode CODE128
+        JsBarcode("#barcodeCanvas", "{{ product.barcode }}", {
+            format: "CODE128",
+            width: 1.8,
+            height: 50,
+            displayValue: true,
+            background: "#ffffff"
+        });
+        
+        // Render QR Code
+        var qr = new QRious({
+            element: document.getElementById('qrCanvas'),
+            value: '{{ product.qr_code }}',
+            size: 150
+        });
+    });
+
+    function downloadBarcode() {
+        // Convert SVG to base64 -> PNG
+        const svg = document.getElementById('barcodeCanvas');
+        const serializer = new XMLSerializer();
+        let source = serializer.serializeToString(svg);
+        
+        if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+            source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+        source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+        const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
+        
+        const link = document.createElement('a');
+        link.download = 'barcode_{{ product.product_code }}.svg';
+        link.href = url;
+        link.click();
+    }
+
+    function downloadQR() {
+        const canvas = document.getElementById('qrCanvas');
+        const link = document.createElement('a');
+        link.download = 'qr_{{ product.product_code }}.png';
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+</script>
+{% endblock %}

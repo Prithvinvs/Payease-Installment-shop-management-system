@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="h3 fw-bold mb-1">Search Results</h1>
+        <p class="text-muted mb-0">Showing matches for query: <strong class="text-primary">"{{ query }}"</strong></p>
+    </div>
+</div>
+
+{% if not results.customers and not results.products and not results.sales and not results.payments %}
+<!-- No Results Found Card -->
+<div class="card border-0 shadow-sm text-center py-5 rounded-4">
+    <div class="card-body p-5 text-muted">
+        <div class="stat-icon bg-light text-muted mx-auto mb-3" style="width: 80px; height: 80px; font-size: 36px;">
+            <i class="bi bi-search"></i>
+        </div>
+        <h4 class="fw-bold text-dark">No Results Found</h4>
+        <p class="text-sm mb-0">We couldn't find any matches in customers, products, invoices, or payments for your search query.</p>
+        <p class="text-xs">Try double-checking spelling or search for numbers (e.g. INV-2026-1001).</p>
+    </div>
+</div>
+{% else %}
+
+<div class="row g-4">
+    <!-- Customers Matches -->
+    {% if results.customers %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-people text-primary me-2"></i>Customer Matches</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cust in results.customers %}
+                            <tr>
+                                 <td class="ps-4 fw-bold">{{ cust.full_name }}</td>
+                                <td>{{ cust.email }}</td>
+                                <td>{{ cust.phone_number }}</td>
+                                <td>
+                                    <span class="badge bg-success-light text-success px-2.5 py-1.5 rounded-pill text-xs fw-semibold">{{ cust.status | capitalize }}</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('customers.profile', id=cust.id) }}" class="btn btn-sm btn-light">View Profile</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Products Matches -->
+    {% if results.products %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-box-seam text-success me-2"></i>Product Matches</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Product Name</th>
+                                <th>SKU</th>
+                                <th>Price</th>
+                                <th>Stock Quantity</th>
+                                <th>Category</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prod in results.products %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ prod.name }}</td>
+                                <td class="text-muted">{{ prod.sku }}</td>
+                                <td class="fw-semibold">₹{{ "{:,.2f}".format(prod.price) }}</td>
+                                <td>
+                                    {% if prod.stock_quantity <= 0 %}
+                                        <span class="badge bg-danger-light text-danger px-2.5 py-1.5 rounded-pill text-xs">Out of Stock</span>
+                                    {% elif prod.is_low_stock %}
+                                        <span class="badge bg-warning-light text-warning px-2.5 py-1.5 rounded-pill text-xs">Low Stock ({{ prod.stock_quantity }})</span>
+                                    {% else %}
+                                        <span class="badge bg-success-light text-success px-2.5 py-1.5 rounded-pill text-xs">{{ prod.stock_quantity }} Available</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ prod.category.name }}</td>
+                                <td class="text-end pe-4">
+                                    <a href="#" class="btn btn-sm btn-light disabled-feature" data-bs-toggle="tooltip" title="Module coming in next phase">Manage Stock</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Sales / Invoice Matches -->
+    {% if results.sales %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-receipt text-warning me-2"></i>Invoice Matches</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Invoice Number</th>
+                                <th>Customer</th>
+                                <th>Product</th>
+                                <th>Sale Date</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in results.sales %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-primary">{{ sale.invoice_number }}</td>
+                                <td>{{ sale.customer.full_name }}</td>
+                                <td>{{ sale.product.name }}</td>
+                                <td class="text-muted">{{ sale.sale_date.strftime('%Y-%m-%d') }}</td>
+                                <td class="fw-semibold">₹{{ "{:,.2f}".format(sale.total_amount) }}</td>
+                                <td>
+                                    {% if sale.status == 'paid' %}
+                                        <span class="badge bg-success-light text-success px-2 rounded-pill text-xs">Fully Paid</span>
+                                    {% elif sale.status == 'cancelled' %}
+                                        <span class="badge bg-danger-light text-danger px-2 rounded-pill text-xs">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge bg-info-light text-info px-2 rounded-pill text-xs">Active Instalments</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="#" class="btn btn-sm btn-light disabled-feature" data-bs-toggle="tooltip" title="Module coming in next phase">View Invoice</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Payments Matches -->
+    {% if results.payments %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-wallet2 text-info me-2"></i>Payment Receipts Matches</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Receipt ID</th>
+                                <th>Customer Name</th>
+                                <th>Invoice Number</th>
+                                <th>Amount Paid</th>
+                                <th>Payment Date</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pay in results.payments %}
+                            <tr>
+                                <td class="ps-4 fw-bold">REC-{{ pay.id }}</td>
+                                <td>{{ pay.customer.full_name }}</td>
+                                <td>{{ pay.sale.invoice_number }}</td>
+                                <td class="fw-semibold text-success">₹{{ "{:,.2f}".format(pay.payment_amount) }}</td>
+                                <td class="text-muted">{{ pay.payment_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="text-end pe-4">
+                                    <a href="#" class="btn btn-sm btn-light disabled-feature" data-bs-toggle="tooltip" title="Module coming in next phase">Print Receipt</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

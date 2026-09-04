@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Product - {{ product.product_name }}{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('products.index') }}" class="text-decoration-none text-muted">Products & Inventory</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('products.detail', id=product.id) }}" class="text-decoration-none text-muted">{{ product.product_name }}</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Edit Product</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Edit Product Details</h1>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+    {{ form.csrf_token }}
+    <div class="row g-4 mb-5">
+        <!-- Main Form Columns -->
+        <div class="col-12 col-lg-8">
+            <!-- General specifications card -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0 text-dark">General Information</h5>
+                    <p class="text-muted text-xs mb-0">Describe product specifications and tags</p>
+                </div>
+                <div class="card-body p-4 text-sm">
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label text-muted fw-semibold">Product Name <span class="text-danger">*</span></label>
+                        {{ form.product_name(class="form-control rounded-3" + (" is-invalid" if form.product_name.errors else ""), placeholder="e.g. iPhone 15 Pro Max") }}
+                        {% for err in form.product_name.errors %}
+                        <div class="invalid-feedback">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-sm-6">
+                            <label for="category_id" class="form-label text-muted fw-semibold">Category <span class="text-danger">*</span></label>
+                            {{ form.category_id(class="form-select rounded-3" + (" is-invalid" if form.category_id.errors else "")) }}
+                            {% for err in form.category_id.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label for="brand_id" class="form-label text-muted fw-semibold">Brand <span class="text-danger">*</span></label>
+                            {{ form.brand_id(class="form-select rounded-3" + (" is-invalid" if form.brand_id.errors else "")) }}
+                            {% for err in form.brand_id.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="description" class="form-label text-muted fw-semibold">Description</label>
+                        {{ form.description(class="form-control rounded-3" + (" is-invalid" if form.description.errors else ""), rows="3") }}
+                        {% for err in form.description.errors %}
+                        <div class="invalid-feedback">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pricing calculations card -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0 text-dark">Pricing & Taxation</h5>
+                    <p class="text-muted text-xs mb-0">Define product wholesale purchase price, retail selling price, and taxes</p>
+                </div>
+                <div class="card-body p-4 text-sm">
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-sm-6">
+                            <label for="purchase_price" class="form-label text-muted fw-semibold">Purchase Price (₹) <span class="text-danger">*</span></label>
+                            {{ form.purchase_price(class="form-control rounded-3" + (" is-invalid" if form.purchase_price.errors else "")) }}
+                            {% for err in form.purchase_price.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label for="selling_price" class="form-label text-muted fw-semibold">Selling Price (₹) <span class="text-danger">*</span></label>
+                            {{ form.selling_price(class="form-control rounded-3" + (" is-invalid" if form.selling_price.errors else "")) }}
+                            {% for err in form.selling_price.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label for="gst_percentage" class="form-label text-muted fw-semibold">GST Rate (%) <span class="text-danger">*</span></label>
+                            {{ form.gst_percentage(class="form-control rounded-3" + (" is-invalid" if form.gst_percentage.errors else "")) }}
+                            {% for err in form.gst_percentage.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label for="discount_percentage" class="form-label text-muted fw-semibold">Discount Percentage (%)</label>
+                            {{ form.discount_percentage(class="form-control rounded-3" + (" is-invalid" if form.discount_percentage.errors else "")) }}
+                            {% for err in form.discount_percentage.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stock counts card (Hides Opening Stock inputs to maintain audit trail) -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0 text-dark">Inventory Thresholds</h5>
+                    <p class="text-muted text-xs mb-0">Set limits for low-stock warnings (manual adjustment changes current stock levels)</p>
+                </div>
+                <div class="card-body p-4 text-sm">
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label text-muted fw-semibold d-block">Current Stock Level</label>
+                            <span class="badge bg-light text-dark border px-3 py-2 fs-6 rounded-3 w-100 text-start">{{ product.current_stock }} {{ product.unit }}</span>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label for="unit" class="form-label text-muted fw-semibold">Stock Unit <span class="text-danger">*</span></label>
+                            {{ form.unit(class="form-select rounded-3" + (" is-invalid" if form.unit.errors else "")) }}
+                            {% for err in form.unit.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label for="minimum_stock" class="form-label text-muted fw-semibold">Minimum Stock (Low Alert) <span class="text-danger">*</span></label>
+                            {{ form.minimum_stock(class="form-control rounded-3" + (" is-invalid" if form.minimum_stock.errors else "")) }}
+                            {% for err in form.minimum_stock.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label for="maximum_stock" class="form-label text-muted fw-semibold">Maximum Stock (Overstock Alert) <span class="text-danger">*</span></label>
+                            {{ form.maximum_stock(class="form-control rounded-3" + (" is-invalid" if form.maximum_stock.errors else "")) }}
+                            {% for err in form.maximum_stock.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar items: Upload photo and controls -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                    <h5 class="fw-bold mb-0 text-dark">Product Photo</h5>
+                    <p class="text-muted text-xs mb-0">Formats: JPG, PNG, WEBP (Max 5MB)</p>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <div id="imagePreviewContainer" class="border rounded-4 bg-light mx-auto mb-3 d-flex align-items-center justify-content-center overflow-hidden" style="width: 160px; height: 160px;">
+                        {% if product.product_image %}
+                        <img id="imagePreview" src="{{ url_for('static', filename=product.product_image) }}" alt="Preview" class="w-100 h-100" style="object-fit: cover;">
+                        <i id="imagePlaceholderIcon" class="bi bi-image text-muted d-none" style="font-size: 3rem;"></i>
+                        {% else %}
+                        <i id="imagePlaceholderIcon" class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        <img id="imagePreview" src="" alt="Preview" class="d-none w-100 h-100" style="object-fit: cover;">
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-2">
+                        {{ form.product_image(class="form-control form-control-sm rounded-3" + (" is-invalid" if form.product_image.errors else ""), onchange="previewImage(this)") }}
+                        {% for err in form.product_image.errors %}
+                        <div class="invalid-feedback text-center mt-1">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                    <small class="text-xs text-muted">Leave blank to keep current photo</small>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <button type="submit" class="btn btn-primary rounded-pill w-100 py-2.5 mb-2 fw-semibold">
+                        <i class="bi bi-save me-1.5"></i>Save Changes
+                    </button>
+                    <a href="{{ url_for('products.detail', id=product.id) }}" class="btn btn-light border rounded-pill w-100 py-2.5 fw-semibold text-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
+        const icon = document.getElementById('imagePlaceholderIcon');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+                if(icon) icon.classList.add('d-none');
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+{% endblock %}

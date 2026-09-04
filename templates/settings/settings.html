@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Shop Settings & Backups{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Settings & Backups</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Settings & Backups Administration</h1>
+        <p class="text-muted text-xs">Manage shop settings, sequential receipt/invoice prefixes, and SQLite database recovery states</p>
+    </div>
+</div>
+
+<div class="row g-4 text-sm">
+    <!-- Shop configuration form card -->
+    <div class="col-12 col-xl-7">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-shop text-primary me-2"></i>Store Configurations</h5>
+                {% if current_user.role.role_name != 'Super Admin' %}
+                <span class="badge bg-warning-subtle text-warning border px-3 rounded-pill text-xs fw-semibold">VIEW ONLY (Super Admin Only)</span>
+                {% endif %}
+            </div>
+            
+            <form action="{{ url_for('settings.index') }}" method="POST" class="needs-validation" novalidate>
+                <!-- CSRF Token -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Shop / Business Name</label>
+                        <input type="text" class="form-control" name="shop_name" value="{{ settings.shop_name }}" required {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">GST Number</label>
+                        <input type="text" class="form-control" name="gst_number" value="{{ settings.gst_number }}" required {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Phone Number</label>
+                        <input type="text" class="form-control" name="shop_phone" value="{{ settings.shop_phone }}" required {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Email Address</label>
+                        <input type="email" class="form-control" name="shop_email" value="{{ settings.shop_email }}" required {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label fw-semibold text-secondary">Store Address</label>
+                        <textarea class="form-control" name="shop_address" rows="2" required {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>{{ settings.shop_address }}</textarea>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="fw-bold text-dark mb-2">Prefix Codes & Localization</h6>
+                    
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Invoice Number Prefix</label>
+                        <input type="text" class="form-control" name="invoice_prefix" value="{{ settings.invoice_prefix }}" required {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Receipt Number Prefix</label>
+                        <input type="text" class="form-control" name="receipt_prefix" value="{{ settings.receipt_prefix }}" required {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Timezone Setting</label>
+                        <select class="form-select" name="timezone" {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>
+                            <option value="Asia/Kolkata" {% if settings.timezone == 'Asia/Kolkata' %}selected{% endif %}>India (Asia/Kolkata)</option>
+                            <option value="UTC" {% if settings.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold text-secondary">Currency Code</label>
+                        <select class="form-select" name="currency" {% if current_user.role.role_name != 'Super Admin' %}disabled{% endif %}>
+                            <option value="INR" {% if settings.currency == 'INR' %}selected{% endif %}>Indian Rupee (₹)</option>
+                            <option value="USD" {% if settings.currency == 'USD' %}selected{% endif %}>US Dollar ($)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                {% if current_user.role.role_name == 'Super Admin' %}
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill">Save Configuration</button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <!-- Backup and restore card -->
+    <div class="col-12 col-xl-5">
+        <!-- Manual Backup Card -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-cloud-arrow-up text-success me-2"></i>Database Backups</h5>
+            <p class="text-xs text-muted mb-4">Save copies of the active database instance file or upload standard backup logs.</p>
+            
+            <div class="d-flex gap-2">
+                <form action="{{ url_for('settings.create_backup') }}" method="POST" style="flex: 1;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success w-100 rounded-pill">
+                        <i class="bi bi-plus-circle me-1"></i>Create Manual Backup
+                    </button>
+                </form>
+            </div>
+            
+            {% if current_user.role.role_name == 'Super Admin' %}
+            <hr class="my-4">
+            <h6 class="fw-bold text-dark mb-2">Upload and Restore Backup</h6>
+            <form action="{{ url_for('settings.upload_backup') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <input class="form-control form-control-sm" type="file" name="backup_file" accept=".db" required>
+                    <div class="form-text text-xs text-muted">Upload a valid SQLite .db file. This will overwrite all active database data.</div>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill w-100" onclick="return confirm('WARNING: Uploading and restoring a database backup will overwrite all current system data. Proceed?');">
+                    Upload & Restore
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        
+        <!-- Backups List Card -->
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-list-task text-primary me-2"></i>Backups Ledger</h5>
+            
+            <div class="table-responsive" style="max-height: 350px;">
+                <table class="table align-middle text-sm">
+                    <thead class="bg-light text-xs text-muted uppercase">
+                        <tr>
+                            <th>Backup File</th>
+                            <th>Size</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in backups %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark d-block text-xs" style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ b.filename }}</strong>
+                                <small class="text-muted text-xs d-block">{{ b.created_at }}</small>
+                            </td>
+                            <td class="text-xs">{{ b.size }}</td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <!-- Download -->
+                                    <a href="{{ url_for('settings.download_backup', filename=b.filename) }}" class="btn btn-sm btn-light border px-2.5 rounded-pill" title="Download backup">
+                                        <i class="bi bi-download text-primary"></i>
+                                    </a>
+                                    
+                                    {% if current_user.role.role_name == 'Super Admin' %}
+                                    <!-- Restore -->
+                                    <form action="{{ url_for('settings.restore_backup', filename=b.filename) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to restore the database to this backup version? All current data will be overwritten.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-light border px-2.5 rounded-pill" title="Restore database">
+                                            <i class="bi bi-arrow-counterclockwise text-warning"></i>
+                                        </button>
+                                    </form>
+                                    <!-- Delete -->
+                                    <form action="{{ url_for('settings.delete_backup', filename=b.filename) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this backup file? This action is permanent.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-light border px-2.5 rounded-pill" title="Delete backup">
+                                            <i class="bi bi-trash text-danger"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not backups %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted text-xs py-4">No backup files found.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <a href="{{ url_for('users.index') }}" class="btn btn-link text-decoration-none text-muted p-0 mb-2 d-inline-flex align-items-center">
+            <i class="bi bi-arrow-left me-1"></i> Back to Users List
+        </a>
+        <h1 class="h3 fw-bold mb-1">Edit User Profile</h1>
+        <p class="text-muted mb-0">Modify information, adjust access roles, or change status parameters for {{ user.full_name }}.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- User Quick Summary Card -->
+    <div class="col-12 col-lg-4 order-lg-last">
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body p-4">
+                <div class="position-relative d-inline-block mb-3">
+                    {% if user.profile_image %}
+                        <img src="{{ url_for('static', filename=user.profile_image) }}" alt="Avatar" class="avatar object-fit-cover shadow-sm" style="width: 110px; height: 110px; border-radius: 50%;">
+                    {% else %}
+                        <div class="avatar bg-primary-light text-primary mx-auto shadow-sm" style="width: 110px; height: 110px; border-radius: 50%; font-size: 2.5rem;">
+                            <span class="fw-bold">{{ user.full_name[0] | upper }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <h4 class="fw-bold mb-1">{{ user.full_name }}</h4>
+                <p class="text-muted text-xs uppercase mb-3">@{{ user.username }}</p>
+                <div class="mb-3">
+                    {% if user.role.role_name == 'Super Admin' %}
+                        <span class="badge bg-danger-light text-danger px-3 py-1.5 rounded-pill text-xs fw-semibold">Super Admin</span>
+                    {% elif user.role.role_name == 'Admin' %}
+                        <span class="badge bg-primary-light text-primary px-3 py-1.5 rounded-pill text-xs fw-semibold">Admin</span>
+                    {% else %}
+                        <span class="badge bg-info-light text-info px-3 py-1.5 rounded-pill text-xs fw-semibold">Staff</span>
+                    {% endif %}
+                </div>
+                <hr>
+                <div class="text-start mt-4 text-sm">
+                    <div class="mb-2"><span class="text-muted text-xs uppercase d-block">Email Address</span><strong>{{ user.email }}</strong></div>
+                    <div class="mb-2"><span class="text-muted text-xs uppercase d-block">Phone Number</span><strong>{{ user.phone }}</strong></div>
+                    <div><span class="text-muted text-xs uppercase d-block">Account Created</span><strong>{{ user.created_at.strftime('%Y-%m-%d') }}</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Form Card -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Profile Details</h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <!-- Full Name -->
+                        <div class="col-md-6">
+                            {{ form.full_name.label(class="form-label text-sm fw-medium") }}
+                            {% if form.full_name.errors %}
+                                {{ form.full_name(class="form-control text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.full_name.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.full_name(class="form-control text-sm") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            {{ form.username.label(class="form-label text-sm fw-medium") }}
+                            {% if form.username.errors %}
+                                {{ form.username(class="form-control text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.username.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.username(class="form-control text-sm") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            {{ form.email.label(class="form-label text-sm fw-medium") }}
+                            {% if form.email.errors %}
+                                {{ form.email(class="form-control text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.email.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.email(class="form-control text-sm") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div class="col-md-6">
+                            {{ form.phone.label(class="form-label text-sm fw-medium") }}
+                            {% if form.phone.errors %}
+                                {{ form.phone(class="form-control text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.phone.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.phone(class="form-control text-sm") }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Access & Uploads</h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <!-- System Role Selection -->
+                        <div class="col-md-6">
+                            {{ form.role_id.label(class="form-label text-sm fw-medium") }}
+                            {% if form.role_id.errors %}
+                                {{ form.role_id(class="form-select text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.role_id.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.role_id(class="form-select text-sm") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Status Selection -->
+                        <div class="col-md-6">
+                            {{ form.status.label(class="form-label text-sm fw-medium") }}
+                            {% if form.status.errors %}
+                                {{ form.status(class="form-select text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.status.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.status(class="form-select text-sm") }}
+                            {% endif %}
+                        </div>
+
+                        <!-- Change Profile Image -->
+                        <div class="col-md-12">
+                            {{ form.profile_image.label(class="form-label text-sm fw-medium") }}
+                            {% if form.profile_image.errors %}
+                                {{ form.profile_image(class="form-control text-sm is-invalid") }}
+                                <div class="invalid-feedback text-xs">
+                                    {% for error in form.profile_image.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.profile_image(class="form-control text-sm") }}
+                            {% endif %}
+                            <div class="form-text text-xs text-muted">Upload a new image to replace the current profile picture.</div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="border-top pt-4 d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('users.index') }}" class="btn btn-light rounded-pill px-4 text-sm">Cancel</a>
+                        {{ form.submit(class="btn btn-primary rounded-pill px-4 text-sm shadow-sm") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

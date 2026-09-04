@@ -1,0 +1,516 @@
+{% extends 'base.html' %}
+
+{% block title %}POS Billing Workspace - PayEase{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('sales.index') }}" class="text-decoration-none text-muted">Sales & Billing</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">POS Workspace</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">POS Billing Workspace</h1>
+    </div>
+    <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('customers.register') }}" class="btn btn-light border btn-sm px-3 rounded-pill"><i class="bi bi-person-plus me-1 text-muted"></i>Add Customer</a>
+        <a href="{{ url_for('sales.index') }}" class="btn btn-light border btn-sm px-3 rounded-pill ms-2">Sales Directory</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-5 text-sm">
+    <!-- Left panel: Products Search and Shopping Cart -->
+    <div class="col-12 col-lg-8">
+        <!-- Live Product Search Card -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0 text-dark">Search Products</h5>
+                <p class="text-muted text-xs mb-0">Search by product name, code, or scan barcode</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="position-relative">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="productSearchInput" class="form-control bg-light border-start-0 rounded-end-3 text-sm py-2" placeholder="Scan barcode or type product name...">
+                    </div>
+                    <!-- Autocomplete dropdown -->
+                    <div id="productSuggestions" class="position-absolute shadow-lg border rounded-3 w-100 bg-white mt-1 d-none" style="z-index: 1050; max-height: 250px; overflow-y: auto;">
+                        <!-- JS injected suggestion rows -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- POS Cart Card -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark">Shopping Cart</h5>
+                <span class="badge bg-primary-light text-primary rounded-pill" id="cart-count">0 Items</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table class="table align-middle text-sm" id="cartTable">
+                        <thead class="bg-light text-xs text-muted uppercase">
+                            <tr>
+                                <th scope="col" style="width: 50px;">Code</th>
+                                <th scope="col">Product</th>
+                                <th scope="col" class="text-center" style="width: 120px;">Qty</th>
+                                <th scope="col" class="text-end">Price</th>
+                                <th scope="col" class="text-end" style="width: 100px;">Disc %</th>
+                                <th scope="col" class="text-end">GST %</th>
+                                <th scope="col" class="text-end">Total</th>
+                                <th scope="col" class="text-end" style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-cart3 fs-2 d-block mb-2 text-muted"></i>
+                                    Your billing cart is empty. Scan barcodes or search above to add items.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Panel: Customer, Totals calculations and checkouts -->
+    <div class="col-12 col-lg-4">
+        <!-- Customer Info Card -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0 text-dark">Customer Billing Info</h5>
+                <p class="text-muted text-xs mb-0">Select credit customer account</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <label for="customerSelect" class="form-label text-muted fw-semibold">Search Customer</label>
+                    <select id="customerSelect" class="form-select rounded-3 text-sm select2-setup" required>
+                        <option value="">-- Choose Customer --</option>
+                        {% for c in customers %}
+                        <option value="{{ c.id }}" data-code="{{ c.customer_code }}" data-phone="{{ c.phone_number }}" data-balance="{{ c.outstanding_balance }}">{{ c.full_name }} ({{ c.customer_code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div id="customerSummaryBlock" class="d-none bg-light p-3 rounded-3 text-xs text-secondary mt-3">
+                    <div class="d-flex justify-content-between mb-1.5">
+                        <span>Customer Code:</span>
+                        <strong class="text-dark" id="summaryCustomerCode">-</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1.5">
+                        <span>Phone Number:</span>
+                        <strong class="text-dark" id="summaryCustomerPhone">-</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Outstanding Dues:</span>
+                        <strong class="text-danger" id="summaryCustomerDues">₹0.00</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Invoice Summary & Math Card -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0 text-dark">Invoice Totals</h5>
+                <p class="text-muted text-xs mb-0">Summarized billing and credit plan</p>
+            </div>
+            <div class="card-body p-4 text-xs text-secondary">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <strong class="text-dark" id="totalsSubtotal">₹0.00</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Discount Amount:</span>
+                    <strong class="text-success" id="totalsDiscount">- ₹0.00</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>GST (Tax):</span>
+                    <strong class="text-dark" id="totalsTax">₹0.00</strong>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-4">
+                    <strong class="text-dark text-sm">Grand Total:</strong>
+                    <strong class="text-dark text-base" id="totalsGrand">₹0.00</strong>
+                </div>
+                
+                <!-- Down payment settings -->
+                <div class="mb-3 text-sm">
+                    <label for="downPaymentInput" class="form-label text-muted fw-semibold">Down Payment (₹)</label>
+                    <input type="number" id="downPaymentInput" class="form-control rounded-3 text-sm py-2" value="0" min="0" step="1">
+                </div>
+                
+                <div class="d-flex justify-content-between mb-3">
+                    <span>Remaining Balance:</span>
+                    <strong class="text-danger text-sm" id="totalsRemaining">₹0.00</strong>
+                </div>
+                
+                <!-- Credit instalment plan configurations -->
+                <div id="creditPlanGroup" class="d-none">
+                    <div class="mb-3 text-sm">
+                        <label for="instalmentPlanSelect" class="form-label text-muted fw-semibold">Instalment Tenure</label>
+                        <select id="instalmentPlanSelect" class="form-select rounded-3 text-sm">
+                            <option value="3">3 Months Plan</option>
+                            <option value="6" selected>6 Months Plan</option>
+                            <option value="12">12 Months Plan</option>
+                            <option value="1">1 Month Plan</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 text-sm">
+                        <label for="dueDaySelect" class="form-label text-muted fw-semibold">Due Day of Month</label>
+                        <input type="number" id="dueDaySelect" class="form-control rounded-3 text-sm" value="5" min="1" max="28">
+                    </div>
+                    
+                    <div class="bg-light p-3 rounded-3 mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Estimated Monthly EMI:</span>
+                            <strong class="text-primary text-sm" id="emiVal">₹0.00 / mo</strong>
+                        </div>
+                        <small class="text-muted d-block mt-0.5">Calculated at 0% markup interest</small>
+                    </div>
+                </div>
+                
+                <button type="button" onclick="checkoutCart()" class="btn btn-primary rounded-pill w-100 py-2.5 mb-2 fw-semibold text-sm">
+                    <i class="bi bi-cart-check me-1.5"></i>Generate Invoice
+                </button>
+                <button type="button" onclick="clearCart()" class="btn btn-light border rounded-pill w-100 py-2.5 text-secondary fw-semibold text-sm">
+                    Cancel Sale
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let products_list = [];
+    let cart = [];
+
+    $(document).ready(function() {
+        // Load active products list from JSON API for live search comparison
+        $.getJSON('/api/products', function(data) {
+            products_list = data;
+        });
+
+        // Setup Customer Select change listener
+        $('#customerSelect').change(function() {
+            const selected = $(this).find(':selected');
+            const code = selected.data('code');
+            const phone = selected.data('phone');
+            const balance = selected.data('balance');
+            
+            if (code) {
+                $('#summaryCustomerCode').text(code);
+                $('#summaryCustomerPhone').text(phone);
+                $('#summaryCustomerDues').text('₹' + parseFloat(balance).toFixed(2));
+                $('#customerSummaryBlock').removeClass('d-none');
+            } else {
+                $('#customerSummaryBlock').add('d-none');
+            }
+        });
+
+        // Product search autocomplete events
+        $('#productSearchInput').on('input', function() {
+            const val = $(this).val().toLowerCase().trim();
+            const suggestions = $('#productSuggestions');
+            suggestions.empty();
+            
+            if (!val) {
+                suggestions.addClass('d-none');
+                return;
+            }
+            
+            // Filter from products
+            const matches = products_list.filter(p => 
+                p.product_name.toLowerCase().includes(val) ||
+                p.product_code.toLowerCase().includes(val) ||
+                p.barcode.toLowerCase().includes(val)
+            );
+            
+            if (matches.length > 0) {
+                matches.forEach(p => {
+                    const row = `
+                        <div class="suggestion-row p-2.5 border-bottom text-xs d-flex align-items-center justify-content-between" style="cursor:pointer;" onclick="addItemToCart('${p.id}')">
+                            <div>
+                                <strong class="text-dark d-block">${p.product_name}</strong>
+                                <span class="text-muted">Code: ${p.product_code} | Price: ₹${p.selling_price.toFixed(2)}</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge ${p.current_stock <= p.minimum_stock ? 'bg-warning-light text-warning' : 'bg-success-light text-success'} rounded-pill">
+                                    Stock: ${p.current_stock}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    suggestions.append(row);
+                });
+                suggestions.removeClass('d-none');
+            } else {
+                suggestions.addClass('d-none');
+            }
+        });
+
+        // Click outside suggestions hide dropdown
+        $(document).click(function(e) {
+            if (!$(e.target).closest('#productSearchInput, #productSuggestions').length) {
+                $('#productSuggestions').addClass('d-none');
+            }
+        });
+
+        // Down payment change math
+        $('#downPaymentInput').on('input change', function() {
+            updateCartTotals();
+        });
+        
+        // Tenures plan change math
+        $('#instalmentPlanSelect').change(function() {
+            updateCartTotals();
+        });
+    });
+
+    function addItemToCart(id) {
+        $('#productSuggestions').addClass('d-none');
+        $('#productSearchInput').val('');
+        
+        const product = products_list.find(p => p.id === id);
+        if (!product) return;
+        
+        // Check if already in cart
+        const existing = cart.find(item => item.product_id === id);
+        if (existing) {
+            if (existing.quantity >= product.current_stock) {
+                alert(`Insufficient stock. Only ${product.current_stock} item(s) are available.`);
+                return;
+            }
+            existing.quantity += 1;
+        } else {
+            if (product.current_stock <= 0) {
+                alert("This product is out of stock.");
+                return;
+            }
+            cart.push({
+                product_id: product.id,
+                product_code: product.product_code,
+                product_name: product.product_name,
+                unit_price: product.selling_price,
+                discount: product.discount_percentage || 0,
+                gst: product.gst_percentage || 18,
+                quantity: 1,
+                max_stock: product.current_stock
+            });
+        }
+        
+        renderCart();
+    }
+
+    function renderCart() {
+        const body = $('#cartTableBody');
+        body.empty();
+        
+        if (cart.length === 0) {
+            body.append(`
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-cart3 fs-2 d-block mb-2 text-muted"></i>
+                        Your billing cart is empty. Scan barcodes or search above to add items.
+                    </td>
+                </tr>
+            `);
+            $('#cart-count').text("0 Items");
+            updateCartTotals();
+            return;
+        }
+        
+        $('#cart-count').text(cart.length + " Items");
+        
+        cart.forEach((item, index) => {
+            const lineTotal = calculateLineTotal(item);
+            const row = `
+                <tr>
+                    <td class="fw-bold text-xs">${item.product_code}</td>
+                    <td>
+                        <span class="fw-semibold text-dark d-block">${item.product_name}</span>
+                    </td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <button class="btn btn-outline-secondary py-0" type="button" onclick="adjustQty(${index}, -1)">-</button>
+                            <input type="number" class="form-control text-center py-0 text-xs" value="${item.quantity}" min="1" max="${item.max_stock}" onchange="changeQty(${index}, this.value)" style="width: 50px;">
+                            <button class="btn btn-outline-secondary py-0" type="button" onclick="adjustQty(${index}, 1)">+</button>
+                        </div>
+                        <small class="text-muted text-xs">Limit: ${item.max_stock}</small>
+                    </td>
+                    <td class="text-end fw-medium">₹${item.unit_price.toFixed(2)}</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm text-end text-xs" value="${item.discount}" min="0" max="100" onchange="changeDiscount(${index}, this.value)">
+                    </td>
+                    <td class="text-end text-muted text-xs">${item.gst}%</td>
+                    <td class="text-end fw-bold text-dark">₹${lineTotal.toFixed(2)}</td>
+                    <td class="text-end">
+                        <button type="button" onclick="removeItem(${index})" class="btn btn-xs btn-outline-danger border-0 rounded-circle"><i class="bi bi-x"></i></button>
+                    </td>
+                </tr>
+            `;
+            body.append(row);
+        });
+        
+        updateCartTotals();
+    }
+
+    function calculateLineTotal(item) {
+        const factor = (100 - item.discount) / 100;
+        return item.unit_price * factor * item.quantity;
+    }
+
+    function adjustQty(index, change) {
+        const item = cart[index];
+        const newQty = item.quantity + change;
+        if (newQty >= 1 && newQty <= item.max_stock) {
+            item.quantity = newQty;
+            renderCart();
+        } else if (newQty > item.max_stock) {
+            alert(`Insufficient stock. Only ${item.max_stock} units available.`);
+        }
+    }
+
+    function changeQty(index, val) {
+        const item = cart[index];
+        const qty = parseInt(val);
+        if (qty >= 1 && qty <= item.max_stock) {
+            item.quantity = qty;
+            renderCart();
+        } else {
+            alert(`Invalid quantity. Min: 1, Max: ${item.max_stock}.`);
+            renderCart();
+        }
+    }
+
+    function changeDiscount(index, val) {
+        const item = cart[index];
+        const disc = parseFloat(val);
+        if (disc >= 0 && disc <= 100) {
+            item.discount = disc;
+            renderCart();
+        } else {
+            alert("Discount percentage must be between 0 and 100.");
+            renderCart();
+        }
+    }
+
+    function removeItem(index) {
+        cart.splice(index, 1);
+        renderCart();
+    }
+
+    function clearCart() {
+        if (confirm("Are you sure you want to clear the shopping cart?")) {
+            cart = [];
+            renderCart();
+        }
+    }
+
+    function updateCartTotals() {
+        let subtotal = 0;
+        let discount = 0;
+        let tax = 0;
+        let grand = 0;
+        
+        cart.forEach(item => {
+            const lineTotal = calculateLineTotal(item);
+            const lineSub = lineTotal / (1 + (item.gst / 100));
+            const lineTax = lineTotal - lineSub;
+            const lineDisc = (item.unit_price * (item.discount / 100)) * item.quantity;
+            
+            grand += lineTotal;
+            subtotal += lineSub;
+            tax += lineTax;
+            discount += lineDisc;
+        });
+        
+        // Render totals labels
+        $('#totalsSubtotal').text('₹' + subtotal.toFixed(2));
+        $('#totalsDiscount').text('- ₹' + discount.toFixed(2));
+        $('#totalsTax').text('₹' + tax.toFixed(2));
+        $('#totalsGrand').text('₹' + grand.toFixed(2));
+        
+        // Down payment math
+        let dp = parseFloat($('#downPaymentInput').val()) || 0;
+        if (dp > grand) {
+            dp = grand;
+            $('#downPaymentInput').val(dp.toFixed(2));
+        }
+        
+        const rem = grand - dp;
+        $('#totalsRemaining').text('₹' + rem.toFixed(2));
+        
+        // Enable/disable credit plan dropdowns
+        if (rem > 0) {
+            $('#creditPlanGroup').removeClass('d-none');
+            const months = parseInt($('#instalmentPlanSelect').val()) || 6;
+            const emi = rem / months;
+            $('#emiVal').text('₹' + emi.toFixed(2) + ' / mo');
+        } else {
+            $('#creditPlanGroup').addClass('d-none');
+            $('#emiVal').text('₹0.00 / mo');
+        }
+    }
+
+    function checkoutCart() {
+        const customerId = $('#customerSelect').val();
+        if (!customerId) {
+            alert("Please select a customer for the sale.");
+            return;
+        }
+        
+        if (cart.length === 0) {
+            alert("Cannot checkout. Cart is empty.");
+            return;
+        }
+        
+        const dp = parseFloat($('#downPaymentInput').val()) || 0;
+        const months = parseInt($('#instalmentPlanSelect').val()) || 6;
+        const due_day = parseInt($('#dueDaySelect').val()) || 5;
+        
+        const payload = {
+            customer_id: customerId,
+            cart: cart.map(item => ({
+                product_id: item.product_id,
+                quantity: item.quantity,
+                discount: item.discount
+            })),
+            down_payment: dp,
+            total_instalments: (grandTotal() - dp > 0) ? months : 0,
+            due_day: due_day
+        };
+        
+        // POST to REST API
+        $.ajax({
+            url: '/api/sales',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function(response) {
+                alert(`Sale Invoice ${response.invoice_number} generated successfully!`);
+                window.location.href = `/sales/invoice/${response.id}`;
+            },
+            error: function(xhr) {
+                const err = xhr.responseJSON ? xhr.responseJSON.error : "Unknown checkout error.";
+                alert("Checkout Failed: " + err);
+            }
+        });
+    }
+
+    function grandTotal() {
+        let grand = 0;
+        cart.forEach(item => {
+            grand += calculateLineTotal(item);
+        });
+        return grand;
+    }
+</script>
+{% endblock %}

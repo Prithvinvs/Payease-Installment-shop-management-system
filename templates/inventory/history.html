@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Stock Movement History - PayEase{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('products.index') }}" class="text-decoration-none text-muted">Products & Inventory</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Stock History</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Stock Movement History</h1>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-5">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0 text-dark">Audit Trail Logs</h5>
+        <p class="text-muted text-xs mb-0">Full trace of all stock ins, stock outs, adjustments, returns, and sales</p>
+    </div>
+    <div class="card-body p-4 text-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="globalMovementsTable">
+                <thead class="bg-light text-xs text-muted uppercase">
+                    <tr>
+                        <th scope="col">Date Logged</th>
+                        <th scope="col">Product Code</th>
+                        <th scope="col">Product Item</th>
+                        <th scope="col">Movement Type</th>
+                        <th scope="col">Qty Changed</th>
+                        <th scope="col">Prev Stock</th>
+                        <th scope="col">New Stock</th>
+                        <th scope="col">Remarks</th>
+                        <th scope="col">Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in movements %}
+                    <tr>
+                        <td class="text-muted text-xs">{{ m.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="fw-bold text-dark text-xs">{{ m.product.product_code }}</td>
+                        <td>
+                            <a href="{{ url_for('products.detail', id=m.product_id) }}" class="fw-semibold text-primary text-decoration-none">
+                                {{ m.product.product_name }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if m.movement_type == 'Stock In' %}
+                            <span class="badge bg-success-light text-success rounded-pill text-xs">Stock In</span>
+                            {% elif m.movement_type == 'Stock Out' %}
+                            <span class="badge bg-danger-light text-danger rounded-pill text-xs">Stock Out</span>
+                            {% elif m.movement_type == 'Return' %}
+                            <span class="badge bg-info-light text-info rounded-pill text-xs">Return</span>
+                            {% else %}
+                            <span class="badge bg-warning-light text-warning rounded-pill text-xs">Adjustment</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-dark">+{{ m.quantity }}</td>
+                        <td class="text-muted">{{ m.previous_stock }}</td>
+                        <td class="fw-semibold text-dark">{{ m.new_stock }}</td>
+                        <td class="text-muted text-xs italic">{{ m.remarks or '-' }}</td>
+                        <td><span class="badge bg-light text-secondary border px-2 py-1">{{ m.user.username if m.user else 'System' }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#globalMovementsTable').DataTable({
+            "order": [[0, "desc"]],
+            "pageLength": 10
+        });
+    });
+</script>
+{% endblock %}

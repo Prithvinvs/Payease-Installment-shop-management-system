@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Reports & Employee Performance{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}" class="text-decoration-none text-muted">Reports</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Sales Report</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Sales & Employee Performance Reports</h1>
+        <p class="text-muted text-xs">Analyze gross checkout totals, discounts, and staff metrics</p>
+    </div>
+    <div class="col-12 col-md-6 text-md-end">
+        <div class="d-flex gap-2 justify-content-md-end flex-wrap mt-2">
+            <a href="{{ url_for('reports_api.export_csv') }}?type=sales" class="btn btn-sm btn-light border px-3 rounded-pill">
+                <i class="bi bi-filetype-csv text-danger me-1"></i>Export CSV
+            </a>
+            <a href="{{ url_for('reports_api.export_excel') }}?type=sales" class="btn btn-sm btn-light border px-3 rounded-pill">
+                <i class="bi bi-filetype-xls text-success me-1"></i>Export Excel
+            </a>
+            <button onclick="window.print()" class="btn btn-sm btn-primary px-3 rounded-pill">
+                <i class="bi bi-printer me-1"></i>Print List
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Grid table -->
+<div class="card border-0 shadow-sm rounded-4 text-sm mb-4">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0 text-dark">Invoice Ledger Log</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table align-middle text-sm" id="salesReportsTable">
+                <thead class="bg-light text-xs text-muted uppercase text-center">
+                    <tr>
+                        <th class="text-start">Invoice Number</th>
+                        <th class="text-start">Customer</th>
+                        <th>Sale Date</th>
+                        <th class="text-end">Subtotal</th>
+                        <th class="text-end">Tax (GST)</th>
+                        <th class="text-end">Grand Total</th>
+                        <th class="text-end">Down Payment</th>
+                        <th class="text-end">Credit Balance</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sales %}
+                    <tr class="text-center">
+                        <td class="text-start font-monospace text-xs fw-bold text-primary">{{ s.invoice_number }}</td>
+                        <td class="text-start">
+                            <strong class="text-dark d-block">{{ s.customer.full_name }}</strong>
+                            <small class="text-muted text-xs">Code: {{ s.customer.customer_code }}</small>
+                        </td>
+                        <td>{{ s.sale_date.strftime('%d-%b-%Y %H:%M') }}</td>
+                        <td class="text-end">₹{{ "{:,.2f}".format(s.subtotal) }}</td>
+                        <td class="text-end">₹{{ "{:,.2f}".format(s.tax_amount) }}</td>
+                        <td class="text-end fw-bold">₹{{ "{:,.2f}".format(s.grand_total) }}</td>
+                        <td class="text-end text-success">₹{{ "{:,.2f}".format(s.down_payment) }}</td>
+                        <td class="text-end text-danger">₹{{ "{:,.2f}".format(s.remaining_balance) }}</td>
+                        <td>
+                            <span class="badge rounded-pill text-xs fw-semibold {% if s.payment_status == 'paid' %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %}">
+                                {{ s.payment_status.upper() }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not sales %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted p-5">No sales invoice records found.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

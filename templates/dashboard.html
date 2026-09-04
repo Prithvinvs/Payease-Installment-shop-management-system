@@ -1,0 +1,616 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<!-- Page Header & Filters -->
+<div class="row align-items-center mb-4">
+    <div class="col-12 col-md-5">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Dashboard</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0">System Control Panel</h1>
+    </div>
+    
+    <!-- Date Filter Dropdowns -->
+    <div class="col-12 col-md-7 text-md-end mt-3 mt-md-0 d-flex flex-wrap justify-content-md-end gap-2 align-items-center">
+        <!-- Live Indicator -->
+        <div class="d-flex align-items-center text-success text-xs me-2">
+            <span class="spinner-grow spinner-grow-sm me-1.5" role="status" style="width: 8px; height: 8px;"></span> Live Feed
+        </div>
+        
+        <div class="btn-group bg-white shadow-sm rounded-pill p-1 border" role="group">
+            <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn active" data-filter="this_month">This Month</button>
+            <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn" data-filter="today">Today</button>
+            <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn" data-filter="this_week">This Week</button>
+            <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn" data-filter="this_year">This Year</button>
+            <button type="button" class="btn btn-sm rounded-pill px-3 filter-btn" data-filter="custom" data-bs-toggle="collapse" data-bs-target="#customDateCollapse">Custom</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Date Selector Collapse -->
+<div class="collapse mb-4" id="customDateCollapse">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-3">
+            <div class="row g-3 align-items-end justify-content-end">
+                <div class="col-12 col-sm-4 col-md-3">
+                    <label class="form-label text-xs fw-medium text-muted">Start Date</label>
+                    <input type="date" id="startDateInput" class="form-control text-sm">
+                </div>
+                <div class="col-12 col-sm-4 col-md-3">
+                    <label class="form-label text-xs fw-medium text-muted">End Date</label>
+                    <input type="date" id="endDateInput" class="form-control text-sm">
+                </div>
+                <div class="col-12 col-sm-4 col-md-2">
+                    <button type="button" id="applyCustomDateBtn" class="btn btn-primary text-sm w-100 rounded-pill">Apply Dates</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards Shimmer Skeleton Block (Swapped out by JS) -->
+<div class="row g-4 mb-4" id="kpi-cards-grid">
+    <!-- Customers KPI -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card stat-card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="stat-icon bg-primary-light text-primary">
+                        <i class="bi bi-people fs-4"></i>
+                    </div>
+                    <span id="cust-growth-badge" class="badge bg-success-light text-success fw-semibold text-xs"><span class="skeleton-box" style="width: 20px;"></span></span>
+                </div>
+                <h6 class="text-muted fw-normal text-xs uppercase mb-1">Active Customers</h6>
+                <h3 class="mb-0 fw-bold" id="kpi-cust-total"><span class="skeleton-box" style="width: 50px;"></span></h3>
+                <small class="text-muted text-xs d-block mt-2">New: <strong id="kpi-cust-new"><span class="skeleton-box" style="width: 15px;"></span></strong> this month</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales KPI -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card stat-card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="stat-icon bg-info-light text-info">
+                        <i class="bi bi-box-seam fs-4"></i>
+                    </div>
+                    <span class="badge bg-light text-muted fw-normal text-xs uppercase">Total Sales</span>
+                </div>
+                <h6 class="text-muted fw-normal text-xs uppercase mb-1">Today's Sales Vol</h6>
+                <h3 class="mb-0 fw-bold" id="kpi-sales-today"><span class="skeleton-box" style="width: 70px;"></span></h3>
+                <small class="text-muted text-xs d-block mt-2">Month Total: <strong id="kpi-sales-month"><span class="skeleton-box" style="width: 70px;"></span></strong></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue KPI (Redacted for Staff) -->
+    <div class="col-12 col-sm-6 col-xl-3 financial-kpi">
+        <div class="card stat-card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="stat-icon bg-success-light text-success">
+                        <i class="bi bi-wallet2 fs-4"></i>
+                    </div>
+                    <span class="badge bg-light text-muted fw-normal text-xs uppercase">Collections</span>
+                </div>
+                <h6 class="text-muted fw-normal text-xs uppercase mb-1">Today's Collection</h6>
+                <h3 class="mb-0 fw-bold text-success" id="kpi-rev-today"><span class="skeleton-box" style="width: 80px;"></span></h3>
+                <small class="text-muted text-xs d-block mt-2">Month Collected: <strong id="kpi-rev-month"><span class="skeleton-box" style="width: 80px;"></span></strong></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outstanding Balance KPI (Redacted for Staff) -->
+    <div class="col-12 col-sm-6 col-xl-3 financial-kpi">
+        <div class="card stat-card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="stat-icon bg-danger-light text-danger">
+                        <i class="bi bi-exclamation-triangle fs-4"></i>
+                    </div>
+                    <span id="pending-instalments-badge" class="badge bg-danger-light text-danger fw-semibold text-xs"><span class="skeleton-box" style="width: 25px;"></span> Due</span>
+                </div>
+                <h6 class="text-muted fw-normal text-xs uppercase mb-1">Outstanding Balance</h6>
+                <h3 class="mb-0 fw-bold text-danger" id="kpi-rev-outstanding"><span class="skeleton-box" style="width: 90px;"></span></h3>
+                <small class="text-muted text-xs d-block mt-2">Active Instalments: <strong id="kpi-plans-active"><span class="skeleton-box" style="width: 20px;"></span></strong></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions shortcuts bar -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-3">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <strong class="text-sm text-secondary me-2"><i class="bi bi-lightning-charge text-warning me-1"></i>Quick Access:</strong>
+                    <a href="#" class="btn btn-sm btn-light border rounded-pill px-3 disabled-feature" data-bs-toggle="tooltip" title="Module coming in next phase"><i class="bi bi-person-plus me-1 text-primary"></i>Add Customer</a>
+                    <a href="#" class="btn btn-sm btn-light border rounded-pill px-3 disabled-feature" data-bs-toggle="tooltip" title="Module coming in next phase"><i class="bi bi-box-seam me-1 text-success"></i>Add Product</a>
+                    <a href="#" class="btn btn-sm btn-light border rounded-pill px-3 disabled-feature" data-bs-toggle="tooltip" title="Module coming in next phase"><i class="bi bi-receipt me-1 text-warning"></i>Create Sale</a>
+                    <a href="#" class="btn btn-sm btn-light border rounded-pill px-3 disabled-feature" data-bs-toggle="tooltip" title="Module coming in next phase"><i class="bi bi-wallet2 me-1 text-info"></i>Record Payment</a>
+                    <a href="#" class="btn btn-sm btn-light border rounded-pill px-3 disabled-feature" data-bs-toggle="tooltip" title="Module coming in next phase"><i class="bi bi-printer me-1 text-muted"></i>Print Invoice</a>
+                    {% if current_user.role.role_name == 'Super Admin' %}
+                    <a href="#" class="btn btn-sm btn-light border rounded-pill px-3 disabled-feature" data-bs-toggle="tooltip" title="Backup module coming soon"><i class="bi bi-database-down me-1 text-danger"></i>Backup Database</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="row g-4 mb-4">
+    <!-- Monthly Sales (Line) -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-3 px-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Monthly Sales Volume</h6>
+                <p class="text-muted text-xs mb-0">Total sales volume counts comparison</p>
+            </div>
+            <div class="card-body px-3 pb-3 pt-1">
+                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                    <canvas id="monthlySalesLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Revenue (Bar - Redacted for Staff) -->
+    <div class="col-12 col-md-6 col-xl-4 financial-chart-box">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-3 px-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-bar-chart text-success me-2"></i>Monthly Collections</h6>
+                <p class="text-muted text-xs mb-0">Cash received totals per month</p>
+            </div>
+            <div class="card-body px-3 pb-3 pt-1">
+                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                    <canvas id="monthlyRevenueBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Status (Pie) -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-3 px-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-pie-chart text-warning me-2"></i>Payment Plan Statuses</h6>
+                <p class="text-muted text-xs mb-0">Breakdown of active vs delinquent plans</p>
+            </div>
+            <div class="card-body px-3 pb-3 pt-1 d-flex align-items-center justify-content-center">
+                <div class="chart-container" style="position: relative; height: 200px; width: 100%;">
+                    <canvas id="paymentStatusPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales by Category (Doughnut) -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-3 px-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-tag text-info me-2"></i>Sales by Category</h6>
+                <p class="text-muted text-xs mb-0">Count distribution of items sold</p>
+            </div>
+            <div class="card-body px-3 pb-3 pt-1 d-flex align-items-center justify-content-center">
+                <div class="chart-container" style="position: relative; height: 200px; width: 100%;">
+                    <canvas id="salesCategoryDoughnutChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Growth (Area) -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-3 px-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Customer Cumulative Growth</h6>
+                <p class="text-muted text-xs mb-0">New registration increments over time</p>
+            </div>
+            <div class="card-body px-3 pb-3 pt-1">
+                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                    <canvas id="customerGrowthAreaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue vs Expenses (Bar - Redacted for Staff) -->
+    <div class="col-12 col-md-6 col-xl-4 financial-chart-box">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-3 px-3">
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-file-earmark-bar-graph text-danger me-2"></i>Collections vs Expenses</h6>
+                <p class="text-muted text-xs mb-0">Comparison of receipts and expenses</p>
+            </div>
+            <div class="card-body px-3 pb-3 pt-1">
+                <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+                    <canvas id="revenueExpensesBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Business Analytics Panel -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-activity text-primary me-2"></i>Advanced Business Insights</h5>
+                <p class="text-muted text-xs mb-0">Computed indicators reflecting store operations performance</p>
+            </div>
+            <div class="card-body px-4 pb-4 pt-1">
+                <div class="row g-4">
+                    <div class="col-6 col-md-4 col-xl-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted text-xs uppercase d-block">Most Sold Product</span>
+                            <strong id="anal-most-sold" class="text-sm"><span class="skeleton-box" style="width: 100px;"></span></strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted text-xs uppercase d-block">Highest Revenue Item</span>
+                            <strong id="anal-highest-rev" class="text-sm"><span class="skeleton-box" style="width: 110px;"></span></strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted text-xs uppercase d-block">Most Active Client</span>
+                            <strong id="anal-most-active" class="text-sm"><span class="skeleton-box" style="width: 100px;"></span></strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted text-xs uppercase d-block">Customer Retention</span>
+                            <strong id="anal-retention" class="text-sm"><span class="skeleton-box" style="width: 40px;"></span></strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted text-xs uppercase d-block">Stock Turnover Ratio</span>
+                            <strong id="anal-turnover" class="text-sm"><span class="skeleton-box" style="width: 30px;"></span></strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted text-xs uppercase d-block">Average Sale Value</span>
+                            <strong id="anal-avg-sale" class="text-sm"><span class="skeleton-box" style="width: 70px;"></span></strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3 financial-kpi">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted text-xs uppercase d-block">Avg Monthly Revenue</span>
+                            <strong id="anal-avg-monthly" class="text-sm text-success"><span class="skeleton-box" style="width: 80px;"></span></strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-xl-3 financial-kpi">
+                        <div class="p-3 bg-light rounded-3">
+                            <span class="text-muted text-xs uppercase d-block">Monthly Profit (Estimated)</span>
+                            <strong id="anal-profit" class="text-sm text-success"><span class="skeleton-box" style="width: 80px;"></span></strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts, Calendar and Recent Logs Layout -->
+<div class="row g-4 mb-4">
+    <!-- Notifications Alert Panel -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0">Alerts & Warnings</h5>
+                <span class="badge bg-danger rounded-pill" id="alerts-count-badge">0</span>
+            </div>
+            <div class="card-body px-4 pb-4 pt-1" style="max-height: 380px; overflow-y: auto;">
+                <div class="d-flex flex-column gap-3" id="alerts-panel-list">
+                    <!-- Loaded dynamically via JS -->
+                    <div class="text-center py-4 text-muted text-xs">
+                        <div class="spinner-border spinner-border-sm me-2"></div> Loading alerts...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar widget -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-bold mb-0">Event Calendar</h5>
+                <p class="text-muted text-xs mb-0">Payments schedules timeline</p>
+            </div>
+            <div class="card-body px-4 pb-4 pt-1">
+                <div class="calendar-widget">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <strong class="text-sm" id="calendar-month-year">July 2026</strong>
+                        <div class="text-xs text-muted">Today: <span class="fw-bold" id="calendar-today-str">12th</span></div>
+                    </div>
+                    <div class="calendar-grid mb-2">
+                        <div class="calendar-day-header">S</div>
+                        <div class="calendar-day-header">M</div>
+                        <div class="calendar-day-header">T</div>
+                        <div class="calendar-day-header">W</div>
+                        <div class="calendar-day-header">T</div>
+                        <div class="calendar-day-header">F</div>
+                        <div class="calendar-day-header">S</div>
+                    </div>
+                    <!-- Calendar days loaded dynamically via JS -->
+                    <div class="calendar-grid" id="calendar-days-container"></div>
+                </div>
+                <div class="mt-3 text-xs text-muted d-flex gap-3 justify-content-center">
+                    <span><span class="d-inline-block rounded-circle bg-primary" style="width: 8px; height: 8px;"></span> Today</span>
+                    <span><span class="d-inline-block rounded-circle border border-danger" style="width: 8px; height: 8px;"></span> Due Day</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities Timeline -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-bold mb-0">System Activity Log</h5>
+                <p class="text-muted text-xs mb-0">Audit history of operator actions</p>
+            </div>
+            <div class="card-body px-4 pb-4 pt-2" style="max-height: 380px; overflow-y: auto;">
+                <div class="d-flex flex-column gap-3" id="activities-panel-list">
+                    <!-- Loaded dynamically via JS -->
+                    <div class="text-center py-4 text-muted text-xs">
+                        <div class="spinner-border spinner-border-sm me-2"></div> Loading audit log...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Data Grids -->
+<div class="row g-4 mb-4">
+    <!-- Recent Sales Table -->
+    <div class="col-12 col-xl-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-0">Recent Credit Sales</h5>
+                    <p class="text-muted text-xs mb-0">Latest sales invoices registered in system</p>
+                </div>
+                <span class="badge bg-primary-light text-primary">Invoices</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light text-xs uppercase text-muted">
+                            <tr>
+                                <th scope="col" class="ps-4">Invoice</th>
+                                <th scope="col">Customer</th>
+                                <th scope="col">Product</th>
+                                <th scope="col">Amount</th>
+                                <th scope="col">Status</th>
+                                <th scope="col" class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_sales %}
+                                {% for sale in recent_sales %}
+                                <tr>
+                                    <td class="ps-4 fw-bold text-primary">{{ sale.invoice_number }}</td>
+                                    <td>{{ sale.customer.full_name }}</td>
+                                    <td>{{ sale.items[0].product.product_name | truncate(15) }}{% if sale.items|length > 1 %} +{{ sale.items|length - 1 }}{% endif %}</td>
+                                    <td class="fw-semibold">₹{{ "{:,.2f}".format(sale.grand_total) }}</td>
+                                    <td>
+                                        {% if sale.sale_status == 'cancelled' %}
+                                            <span class="badge bg-danger-light text-danger rounded-pill text-xs">Cancelled</span>
+                                        {% elif sale.payment_status == 'paid' %}
+                                            <span class="badge bg-success-light text-success rounded-pill text-xs">Paid</span>
+                                        {% else %}
+                                            <span class="badge bg-info-light text-info rounded-pill text-xs">Instalment</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('sales.invoice_detail', id=sale.id) }}" class="btn btn-sm btn-light border-0"><i class="bi bi-eye"></i></a>
+                                            <a href="{{ url_for('sales.invoice_print', id=sale.id) }}" target="_blank" class="btn btn-sm btn-light border-0"><i class="bi bi-printer"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="6" class="text-center py-4 text-muted">No credit sales invoices found.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payments Table -->
+    <div class="col-12 col-xl-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-0">Recent Receipts</h5>
+                    <p class="text-muted text-xs mb-0">Latest payments collected from customers</p>
+                </div>
+                <span class="badge bg-success-light text-success">Receipts</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light text-xs uppercase text-muted">
+                            <tr>
+                                <th scope="col" class="ps-4">Receipt</th>
+                                <th scope="col">Customer</th>
+                                <th scope="col">Invoice Number</th>
+                                <th scope="col">Amount</th>
+                                <th scope="col">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_payments %}
+                                {% for pay in recent_payments %}
+                                <tr>
+                                    <td class="ps-4 fw-bold">REC-{{ pay.id }}</td>
+                                    <td>{{ pay.customer.full_name }}</td>
+                                    <td>{{ pay.sale.invoice_number }}</td>
+                                    <td class="fw-semibold text-success">₹{{ "{:,.2f}".format(pay.payment_amount) }}</td>
+                                    <td class="text-muted text-xs">{{ pay.payment_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="5" class="text-center py-4 text-muted">No payment receipts found.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Upcoming Due Payments List -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-bold mb-0">Upcoming Dues</h5>
+                <p class="text-muted text-xs mb-0">Repayments due in current month</p>
+            </div>
+            <div class="card-body px-4 pb-4 pt-1">
+                <div class="d-flex flex-column gap-3" style="max-height: 380px; overflow-y: auto;">
+                    {% if upcoming_dues %}
+                        {% for due in upcoming_dues %}
+                        <div class="d-flex align-items-center justify-content-between p-2.5 bg-light rounded-3">
+                            <div>
+                                <strong class="text-sm d-block">{{ due.customer }}</strong>
+                                <span class="text-muted text-xs">Inv: {{ due.invoice }} | Due: {{ due.due_date }}</span>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-sm d-block text-danger">₹{{ "{:,.2f}".format(due.amount) }}</strong>
+                                <span class="badge bg-{{ due.priority }}-light text-{{ due.priority }} text-xs">{{ due.priority_label }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5 text-muted text-xs">No upcoming dues scheduled.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Table -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-0">Low Stock Alerts</h5>
+                    <p class="text-muted text-xs mb-0">Products below warning threshold</p>
+                </div>
+                <span class="badge bg-danger-light text-danger"><i class="bi bi-box-seam"></i> Alerts</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light text-xs uppercase text-muted">
+                            <tr>
+                                <th scope="col" class="ps-4">Product</th>
+                                <th scope="col">Stock</th>
+                                <th scope="col">Limit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if low_stock_products %}
+                                {% for prod in low_stock_products %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <strong class="text-sm d-block text-dark">{{ prod.product_name | truncate(18) }}</strong>
+                                        <span class="text-muted text-xs">Code: {{ prod.product_code }}</span>
+                                    </td>
+                                    <td>
+                                        {% if prod.current_stock <= 0 %}
+                                            <span class="badge bg-danger text-white rounded text-xs">OUT</span>
+                                        {% else %}
+                                            <span class="badge bg-warning-light text-warning rounded text-xs">{{ prod.current_stock }} items</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">{{ prod.minimum_stock }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="3" class="text-center py-4 text-muted">All products have adequate stock levels.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Customers Table -->
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-0">Recent Customers</h5>
+                    <p class="text-muted text-xs mb-0">Latest customer accounts registered</p>
+                </div>
+                <span class="badge bg-info-light text-info"><i class="bi bi-people"></i> New</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="bg-light text-xs uppercase text-muted">
+                            <tr>
+                                <th scope="col" class="ps-4">Customer Name</th>
+                                <th scope="col">Phone</th>
+                                <th scope="col">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_customers %}
+                                {% for cust in recent_customers %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <a href="{{ url_for('customers.profile', id=cust.id) }}" class="text-decoration-none text-dark fw-bold d-block">{{ cust.full_name }}</a>
+                                        <span class="text-muted text-xs">{{ cust.email }}</span>
+                                    </td>
+                                    <td>{{ cust.phone_number }}</td>
+                                    <td class="text-muted text-xs">{{ cust.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="3" class="text-center py-4 text-muted">No customers registered yet.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Pass User Role context to JS variables safely -->
+<script>
+    window.UserRole = "{{ current_user.role.role_name if current_user.is_authenticated else 'Staff' }}";
+</script>
+
+<!-- Dashboard Analytics API scripts -->
+<script src="{{ url_for('static', filename='js/dashboard_api.js') }}"></script>
+{% endblock %}

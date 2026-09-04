@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments Collection Report{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') if current_user.role.role_name in ['Super Admin', 'Admin'] else '#' }}" class="text-decoration-none text-muted">Reports</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Payments Report</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Payments Collection Reports</h1>
+        <p class="text-muted text-xs">Analyze daily collection streams, transaction methods, and receipt registers</p>
+    </div>
+    <div class="col-12 col-md-6 text-md-end">
+        <div class="d-flex gap-2 justify-content-md-end flex-wrap mt-2">
+            {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
+            <a href="{{ url_for('reports_api.export_csv') }}?type=payments" class="btn btn-sm btn-light border px-3 rounded-pill">
+                <i class="bi bi-filetype-csv text-danger me-1"></i>Export CSV
+            </a>
+            <a href="{{ url_for('reports_api.export_excel') }}?type=payments" class="btn btn-sm btn-light border px-3 rounded-pill">
+                <i class="bi bi-filetype-xls text-success me-1"></i>Export Excel
+            </a>
+            {% endif %}
+            <button onclick="window.print()" class="btn btn-sm btn-primary px-3 rounded-pill">
+                <i class="bi bi-printer me-1"></i>Print List
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Payments Ledger list -->
+<div class="card border-0 shadow-sm rounded-4 text-sm">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0 text-dark">Cashier Receipt Register</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table align-middle text-sm" id="paymentReportsTable">
+                <thead class="bg-light text-xs text-muted uppercase text-center">
+                    <tr>
+                        <th class="text-start">Receipt Number</th>
+                        <th class="text-start">Customer</th>
+                        <th>Collection Date</th>
+                        <th class="text-end">Amount Collected</th>
+                        <th>Payment Method</th>
+                        <th>Transaction Reference</th>
+                        <th>Receipt Copy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                    <tr class="text-center">
+                        <td class="text-start font-monospace text-xs fw-bold text-primary">{{ p.receipt_number }}</td>
+                        <td class="text-start">
+                            <strong class="text-dark d-block">{{ p.customer.full_name }}</strong>
+                            <small class="text-muted text-xs">Code: {{ p.customer.customer_code }}</small>
+                        </td>
+                        <td>{{ p.payment_date.strftime('%d-%b-%Y %H:%M') }}</td>
+                        <td class="text-end fw-bold text-success">₹{{ "{:,.2f}".format(p.payment_amount) }}</td>
+                        <td>
+                            <span class="badge bg-secondary rounded-pill text-xs fw-semibold">{{ p.payment_method }}</span>
+                        </td>
+                        <td class="font-monospace text-xs text-secondary">{{ p.transaction_id or 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('payments.receipt', id=p.id) }}" target="_blank" class="btn btn-sm btn-light border rounded-pill px-2.5">
+                                <i class="bi bi-printer text-primary"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not payments %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted p-5">No payments collection logs found.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+
+{% block title %}Collect Payment - PayEase{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('payments.index') }}" class="text-decoration-none text-muted">Payments</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Collect Payment</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Collect Payment Receipt</h1>
+    </div>
+</div>
+
+<div class="row g-4 text-sm">
+    <!-- Left Hand Form Entry Column -->
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0 text-dark">Record Payment Collections</h5>
+                <p class="text-muted text-xs mb-0">Record customer cash/electronic collections against credit accounts</p>
+            </div>
+            <div class="card-body p-4">
+                <form id="paymentCollectionForm" onsubmit="submitCollection(event)">
+                    
+                    <!-- Step 1: Select Customer -->
+                    <div class="mb-3">
+                        <label for="customerSelect" class="form-label text-muted fw-semibold">Select Customer Profile</label>
+                        <select class="form-select rounded-3 text-sm" id="customerSelect" onchange="onCustomerChange()" required>
+                            <option value="">-- Choose Customer --</option>
+                            {% for cust in customers %}
+                                <option value="{{ cust.id }}" {% if selected_customer and selected_customer.id == cust.id %}selected{% endif %}>
+                                    {{ cust.full_name }} (Phone: {{ cust.phone_number }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Step 2: Select Active Plan -->
+                    <div class="mb-3 d-none" id="planSelectContainer">
+                        <label for="planSelect" class="form-label text-muted fw-semibold">Select Instalment Plan</label>
+                        <select class="form-select rounded-3 text-sm" id="planSelect" onchange="onPlanChange()">
+                            <option value="">-- Loading Plans --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Step 3: Select Instalment Schedule Month (Optional) -->
+                    <div class="mb-3 d-none" id="scheduleSelectContainer">
+                        <label for="scheduleSelect" class="form-label text-muted fw-semibold">Target Instalment Month</label>
+                        <select class="form-select rounded-3 text-sm" id="scheduleSelect" onchange="onScheduleChange()">
+                            <option value="">-- Standard Cascade / Advance Payment --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Step 4: Financial Input fields -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label for="amountInput" class="form-label text-muted fw-semibold">Payment Amount (₹)</label>
+                            <input type="number" class="form-control rounded-3 text-sm fw-bold text-success fs-5" id="amountInput" placeholder="0.00" min="0.01" step="0.01" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label for="methodSelect" class="form-label text-muted fw-semibold">Payment Method</label>
+                            <select class="form-select rounded-3 text-sm" id="methodSelect" onchange="onMethodChange()" required>
+                                <option value="Cash">Cash</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Debit Card">Debit Card</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 5: Transaction references (Conditional visibility in JS) -->
+                    <div class="row g-3 mb-3 d-none" id="bankDetailsContainer">
+                        <div class="col-12 col-md-6" id="txIdField">
+                            <label for="transactionIdInput" class="form-label text-muted fw-semibold" id="txIdLabel">Transaction ID / Ref</label>
+                            <input type="text" class="form-control rounded-3 text-sm" id="transactionIdInput" placeholder="Enter transaction reference">
+                        </div>
+                        <div class="col-12 col-md-6 d-none" id="bankNameField">
+                            <label for="bankNameInput" class="form-label text-muted fw-semibold">Bank Name</label>
+                            <input type="text" class="form-control rounded-3 text-sm" id="bankNameInput" placeholder="Enter bank name">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="remarksInput" class="form-label text-muted fw-semibold">Remarks</label>
+                        <textarea class="form-control rounded-3 text-sm" id="remarksInput" rows="2" placeholder="Audit remarks details..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4" id="submitBtn">Save Payment</button>
+                        <a href="{{ url_for('payments.index') }}" class="btn btn-light border rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Hand Summary Column -->
+    <div class="col-12 col-lg-5">
+        <!-- Customer Credit Profile Summary -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 d-none" id="customerSummaryCard">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person text-muted me-2"></i>Customer Profile Dues</h6>
+                <div class="row g-2">
+                    <div class="col-5 text-muted text-xs">Outstanding Balance:</div>
+                    <div class="col-7 fw-bold text-danger" id="sumOutstanding">₹0.00</div>
+                    
+                    <div class="col-5 text-muted text-xs">Phone Number:</div>
+                    <div class="col-7 text-dark" id="sumPhone">-</div>
+                    
+                    <div class="col-5 text-muted text-xs">Aadhaar Number:</div>
+                    <div class="col-7 text-dark" id="sumAadhaar">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Selected Plan Details Summary -->
+        <div class="card border-0 shadow-sm rounded-4 d-none" id="planSummaryCard">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-calendar3 text-muted me-2"></i>Active Plan Summary</h6>
+                <div class="row g-2">
+                    <div class="col-5 text-muted text-xs">Plan Code:</div>
+                    <div class="col-7 fw-bold text-primary" id="sumPlanCode">-</div>
+                    
+                    <div class="col-5 text-muted text-xs">Invoice Code:</div>
+                    <div class="col-7 text-dark" id="sumInvoiceCode">-</div>
+                    
+                    <div class="col-5 text-muted text-xs">Unpaid Plan Balance:</div>
+                    <div class="col-7 fw-bold text-danger" id="sumPlanOutstanding">₹0.00</div>
+                    
+                    <div class="col-5 text-muted text-xs">Monthly EMI Amount:</div>
+                    <div class="col-7 fw-semibold text-dark" id="sumPlanEMI">₹0.00</div>
+                    
+                    <div class="col-5 text-muted text-xs">Next Due Date:</div>
+                    <div class="col-7 text-dark" id="sumPlanDueDate">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let activePlansData = [];
+    let selectedPlanObj = null;
+
+    $(document).ready(function() {
+        // Run initial configuration checks if customer was pre-selected
+        if ($('#customerSelect').val()) {
+            onCustomerChange();
+        }
+    });
+
+    function onCustomerChange() {
+        const customerId = $('#customerSelect').val();
+        if (!customerId) {
+            resetFields();
+            return;
+        }
+        
+        // 1. Fetch customer details
+        $.ajax({
+            url: '/api/customers/' + customerId,
+            type: 'GET',
+            success: function(cust) {
+                $('#customerSummaryCard').removeClass('d-none');
+                $('#sumPhone').text(cust.phone_number);
+                $('#sumAadhaar').text(cust.aadhaar_number || 'N/A');
+                
+                // Formats Rupee
+                const outBal = cust.outstanding_balance || 0;
+                $('#sumOutstanding').text('₹' + outBal.toLocaleString('en-IN', {minimumFractionDigits: 2}));
+            }
+        });
+        
+        // 2. Fetch Customer active instalment plans
+        $.ajax({
+            url: '/api/instalments',
+            type: 'GET',
+            success: function(plans) {
+                // Filter plans belonging to this customer
+                const custPlans = plans.filter(p => p.customer_id === customerId && p.status !== 'completed' && p.status !== 'cancelled');
+                activePlansData = custPlans;
+                
+                const planSelect = $('#planSelect');
+                planSelect.html('<option value="">-- Choose active instalment plan --</option>');
+                
+                if (custPlans.length > 0) {
+                    custPlans.forEach(p => {
+                        planSelect.append(`<option value="${p.id}">${p.plan_number} (Ref: ${p.invoice_number})</option>`);
+                    });
+                    $('#planSelectContainer').removeClass('d-none');
+                    
+                    // Preselect if requested
+                    {% if selected_plan %}
+                        const prePlanId = "{{ selected_plan.id }}";
+                        planSelect.val(prePlanId);
+                        onPlanChange();
+                    {% endif %}
+                } else {
+                    $('#planSelectContainer').addClass('d-none');
+                    $('#planSummaryCard').addClass('d-none');
+                    $('#scheduleSelectContainer').addClass('d-none');
+                }
+            }
+        });
+    }
+
+    function onPlanChange() {
+        const planId = $('#planSelect').val();
+        if (!planId) {
+            $('#planSummaryCard').addClass('d-none');
+            $('#scheduleSelectContainer').addClass('d-none');
+            return;
+        }
+        
+        const plan = activePlansData.find(p => p.id === planId);
+        if (!plan) return;
+        selectedPlanObj = plan;
+        
+        $('#planSummaryCard').removeClass('d-none');
+        $('#sumPlanCode').text(plan.plan_number);
+        $('#sumInvoiceCode').text(plan.invoice_number);
+        $('#sumPlanOutstanding').text('₹' + plan.outstanding_amount.toLocaleString('en-IN', {minimumFractionDigits: 2}));
+        $('#sumPlanEMI').text('₹' + plan.monthly_emi.toLocaleString('en-IN', {minimumFractionDigits: 2}));
+        
+        // Load target schedule dropdown
+        const scheduleSelect = $('#scheduleSelect');
+        scheduleSelect.html('<option value="">-- Standard Cascade / Advance Payment --</option>');
+        
+        const unpaidScheds = plan.schedules.filter(s => s.payment_status !== 'paid');
+        if (unpaidScheds.length > 0) {
+            // Display first unpaid due date in summary
+            $('#sumPlanDueDate').text(unpaidScheds[0].due_date);
+            
+            unpaidScheds.forEach(s => {
+                scheduleSelect.append(`<option value="${s.id}">EMI #${s.instalment_number} (Due: ${s.due_date} | Balance: ₹${s.balance})</option>`);
+            });
+            $('#scheduleSelectContainer').removeClass('d-none');
+        } else {
+            $('#sumPlanDueDate').text('Fully Paid');
+            $('#scheduleSelectContainer').addClass('d-none');
+        }
+        
+        // Autofill amount field with default EMI
+        $('#amountInput').val(plan.monthly_emi);
+    }
+
+    function onScheduleChange() {
+        const schedId = $('#scheduleSelect').val();
+        if (!schedId) {
+            // Restore default plan emi
+            if (selectedPlanObj) {
+                $('#amountInput').val(selectedPlanObj.monthly_emi);
+            }
+            return;
+        }
+        
+        const target = selectedPlanObj.schedules.find(s => s.id === schedId);
+        if (target) {
+            $('#amountInput').val(target.balance);
+        }
+    }
+
+    function onMethodChange() {
+        const method = $('#methodSelect').val();
+        const bankDetails = $('#bankDetailsContainer');
+        const txIdField = $('#txIdField');
+        const bankField = $('#bankNameField');
+        
+        if (method === 'Cash') {
+            bankDetails.addClass('d-none');
+        } else if (method === 'UPI') {
+            bankDetails.removeClass('d-none');
+            txIdField.removeClass('d-none');
+            bankField.addClass('d-none');
+            $('#txIdLabel').text('UPI Reference No / Transaction ID');
+        } else if (method === 'Cheque' || method === 'Bank Transfer') {
+            bankDetails.removeClass('d-none');
+            txIdField.removeClass('d-none');
+            bankField.removeClass('d-none');
+            $('#txIdLabel').text('Reference Number / Cheque No');
+        } else {
+            // Card methods
+            bankDetails.removeClass('d-none');
+            txIdField.removeClass('d-none');
+            bankField.addClass('d-none');
+            $('#txIdLabel').text('Card Auth Code / Transaction ID');
+        }
+    }
+
+    function resetFields() {
+        $('#customerSummaryCard').addClass('d-none');
+        $('#planSelectContainer').addClass('d-none');
+        $('#planSummaryCard').addClass('d-none');
+        $('#scheduleSelectContainer').addClass('d-none');
+        $('#amountInput').val('');
+    }
+
+    function submitCollection(e) {
+        e.preventDefault();
+        
+        const customerId = $('#customerSelect').val();
+        if (!customerId) {
+            alert("Please select a customer profile.");
+            return;
+        }
+
+        let rawAmount = $('#amountInput').val();
+        if (rawAmount) {
+            rawAmount = rawAmount.toString().trim().replace(/[-+]$/, '');
+        }
+        const amountVal = parseFloat(rawAmount);
+        
+        if (!rawAmount || isNaN(amountVal) || amountVal <= 0) {
+            alert("Please enter a valid payment amount greater than zero (e.g. 1000.00).");
+            $('#amountInput').focus();
+            return;
+        }
+
+        const method = $('#methodSelect').val();
+        const txIdVal = $('#transactionIdInput').val() ? $('#transactionIdInput').val().trim() : '';
+        
+        if (method !== 'Cash' && !txIdVal) {
+            alert("Please provide the transaction reference ID for " + method + " payment.");
+            $('#transactionIdInput').focus();
+            return;
+        }
+
+        const payload = {
+            customer_id: customerId,
+            plan_id: $('#planSelect').val() || null,
+            schedule_id: $('#scheduleSelect').val() || null,
+            amount: amountVal,
+            payment_method: method,
+            reference_number: txIdVal || null,
+            bank_name: $('#bankNameInput').val() ? $('#bankNameInput').val().trim() : null,
+            transaction_id: txIdVal || null,
+            remarks: $('#remarksInput').val() ? $('#remarksInput').val().trim() : ''
+        };
+        
+        $('#submitBtn').prop('disabled', true).text('Saving payment...');
+        
+        $.ajax({
+            url: '/api/payments',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function(response) {
+                alert(response.message);
+                // Redirect straight to printable receipt layout
+                window.location.href = '/payments/receipt/' + response.payment_id;
+            },
+            error: function(xhr) {
+                const err = xhr.responseJSON ? xhr.responseJSON.error : "Unknown collection error.";
+                alert("Collection Failed: " + err);
+                $('#submitBtn').prop('disabled', false).text('Save Payment');
+            }
+        });
+    }
+</script>
+{% endblock %}

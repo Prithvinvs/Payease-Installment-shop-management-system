@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Financial Statements & Tax Report{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4 text-sm">
+    <div class="col-12 col-md-6">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-xs">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}" class="text-decoration-none text-muted">Reports</a></li>
+                <li class="breadcrumb-item active text-primary" aria-current="page">Financials</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-dark">Financial Statements & Profit Analysis</h1>
+        <p class="text-muted text-xs">Track net revenue margins, gross margins, and tax distributions</p>
+    </div>
+    <div class="col-12 col-md-6 text-md-end">
+        <button onclick="window.print()" class="btn btn-sm btn-primary px-4 rounded-pill">
+            <i class="bi bi-printer me-1"></i>Print Statement
+        </button>
+    </div>
+</div>
+
+<!-- Financial Summary Widgets -->
+<div class="row g-4 mb-4 text-sm">
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+            <span class="text-muted text-xs uppercase d-block mb-1">Gross Collections</span>
+            <strong class="fs-3 text-dark" id="grossCollections"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></strong>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+            <span class="text-success text-xs uppercase d-block mb-1">Net Earnings (Profit)</span>
+            <strong class="fs-3 text-success" id="netProfit"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></strong>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+            <span class="text-primary text-xs uppercase d-block mb-1">Inventory Asset Valuation</span>
+            <strong class="fs-3 text-primary" id="assetValuation"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></strong>
+        </div>
+    </div>
+</div>
+
+<!-- Statement Breakdowns -->
+<div class="card border-0 shadow-sm rounded-4 text-sm mb-4">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0 text-dark">Income & Recovery Statements</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table align-middle table-bordered text-sm">
+                <tbody>
+                    <tr>
+                        <td class="fw-semibold text-secondary" style="width: 40%;">Total Sales volume Checkouts:</td>
+                        <td class="fw-bold text-dark text-end" id="tblSalesCount"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-semibold text-secondary">Outstanding Customer Credits Dues:</td>
+                        <td class="fw-bold text-danger text-end" id="tblOutstanding"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-semibold text-secondary">Stores Low Stock SKU Alerts:</td>
+                        <td class="fw-bold text-warning text-end" id="tblLowStock"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-semibold text-secondary">Active Credit Instalment Plans:</td>
+                        <td class="fw-bold text-primary text-end" id="tblActivePlans"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    fetch('/api/reports/dashboard')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('grossCollections').innerText = '₹' + data.total_revenue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('netProfit').innerText = '₹' + data.total_profit.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('assetValuation').innerText = '₹' + data.total_stock_value.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            // Table values
+            document.getElementById('tblSalesCount').innerText = data.total_sales + ' Checkout Sales Invoices';
+            document.getElementById('tblOutstanding').innerText = '₹' + data.total_outstanding.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('tblLowStock').innerText = data.low_stock_count + ' Alert Products';
+            document.getElementById('tblActivePlans').innerText = data.active_instalment_plans + ' Instalment Plans';
+        });
+});
+</script>
+{% endblock %}
