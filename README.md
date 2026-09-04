@@ -6,7 +6,7 @@ This project uses Python Flask, SQLAlchemy, Supabase PostgreSQL, and Bootstrap 5
 
 ---
 
-## 📁 Folder Structure
+## 📁😊 Folder Structure
 
 ```
 c:\Instalmentshopmanage\
