@@ -225,13 +225,13 @@
                                         <tr>
                                             <td class="fw-bold text-primary">{{ sale.invoice_number }}</td>
                                             <td class="text-muted text-xs">{{ sale.sale_date.strftime('%Y-%m-%d') }}</td>
-                                            <td class="fw-semibold">{{ sale.product.name }}</td>
-                                            <td class="fw-semibold">₹{{ "{:,.2f}".format(sale.total_amount) }}</td>
+                                            <td class="fw-semibold">{{ sale.product_summary }}</td>
+                                            <td class="fw-semibold">₹{{ "{:,.2f}".format(sale.grand_total) }}</td>
                                             <td class="text-muted">₹{{ "{:,.2f}".format(sale.down_payment) }}</td>
                                             <td>
-                                                {% if sale.status == 'paid' %}
+                                                {% if sale.payment_status == 'paid' %}
                                                 <span class="badge bg-success-light text-success rounded-pill text-xs">Fully Paid</span>
-                                                {% elif sale.status == 'cancelled' %}
+                                                {% elif sale.sale_status == 'cancelled' %}
                                                 <span class="badge bg-danger-light text-danger rounded-pill text-xs">Cancelled</span>
                                                 {% else %}
                                                 <span class="badge bg-info-light text-info rounded-pill text-xs">Instalment</span>
@@ -264,8 +264,8 @@
                                     {% if customer.payments %}
                                         {% for pay in customer.payments %}
                                         <tr>
-                                            <td class="fw-bold text-xs">REC-{{ pay.id }}</td>
-                                            <td class="fw-bold text-primary text-xs">{{ pay.sale.invoice_number }}</td>
+                                            <td class="fw-bold text-xs">{{ pay.receipt_number or ('REC-' + pay.id[:8]) }}</td>
+                                            <td class="fw-bold text-primary text-xs">{{ pay.invoice_number or (pay.sale.invoice_number if pay.sale else 'N/A') }}</td>
                                             <td class="fw-semibold text-success">₹{{ "{:,.2f}".format(pay.payment_amount) }}</td>
                                             <td class="text-muted text-xs">{{ pay.payment_date.strftime('%Y-%m-%d %H:%M') }}</td>
                                             <td><span class="badge bg-success-light text-success rounded-pill text-xs">Paid</span></td>

@@ -127,15 +127,15 @@
                             <strong class="text-xs text-muted uppercase d-block mb-3"><i class="bi bi-calendar-check text-primary me-2"></i>Instalment Plan Schedule</strong>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Plan Tenure:</span>
-                                <strong class="text-dark">{{ sale.instalment_plan.total_instalments }} Months</strong>
+                                <strong class="text-dark">{{ sale.instalment_plan.number_of_instalments }} {{ sale.instalment_plan.period_plural_name }}</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Monthly EMI Amount:</span>
-                                <strong class="text-primary">₹{{ "{:,.2f}".format(sale.instalment_plan.amount_per_instalment) }} / mo</strong>
+                                <span>EMI Amount:</span>
+                                <strong class="text-primary">₹{{ "{:,.2f}".format(sale.instalment_plan.monthly_emi) }} / {{ sale.instalment_plan.period_unit_label }}</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Monthly Due Day:</span>
-                                <strong class="text-dark">Day {{ sale.instalment_plan.due_day_of_month }} of month</strong>
+                                <span>First Due Date:</span>
+                                <strong class="text-dark">{{ sale.instalment_plan.first_due_date.strftime('%d-%b-%Y') }}</strong>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>Plan Status:</span>

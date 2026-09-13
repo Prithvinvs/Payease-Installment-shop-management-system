@@ -121,7 +121,7 @@
                     <td class="text-end fw-bold">₹{{ "{:,.2f}".format(item.amount) }}</td>
                     <td class="text-end text-success fw-medium">₹{{ "{:,.2f}".format(item.paid_amount) }}</td>
                     <td class="text-end text-danger fw-bold">₹{{ "{:,.2f}".format(item.balance) }}</td>
-                    <td>{{ item.payment_status | uppercase }}</td>
+                    <td>{{ item.payment_status | upper }}</td>
                     <td>{{ item.days_overdue if item.days_overdue > 0 else '-' }}</td>
                     <td class="text-start text-xs text-muted">{{ item.remarks or '' }}</td>
                 </tr>

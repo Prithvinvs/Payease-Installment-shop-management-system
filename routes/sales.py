@@ -53,12 +53,24 @@ def index():
     elif filter_type == 'cancelled':
         query = query.filter(Sale.sale_status == 'cancelled')
         
+    # Apply search filter (by product name, product code, barcode, invoice number, customer name/phone)
+    if search_q:
+        query = query.join(Customer).outerjoin(SaleItem).outerjoin(Product).filter(
+            (Sale.invoice_number.ilike(f"%{search_q}%")) |
+            (Customer.full_name.ilike(f"%{search_q}%")) |
+            (Customer.phone_number.ilike(f"%{search_q}%")) |
+            (Product.product_name.ilike(f"%{search_q}%")) |
+            (Product.product_code.ilike(f"%{search_q}%")) |
+            (Product.barcode.ilike(f"%{search_q}%"))
+        ).distinct()
+
     sales = query.order_by(Sale.sale_date.desc()).all()
     
     return render_template(
         'sales/list.html',
         sales=sales,
-        current_filter=filter_type
+        current_filter=filter_type,
+        search_q=search_q
     )
 
 

@@ -103,13 +103,13 @@ def search():
         results['customers'] = Customer.query.filter(
             (Customer.full_name.ilike(f"%{search_query}%")) |
             (Customer.email.ilike(f"%{search_query}%")) |
-            (Customer.phone.ilike(f"%{search_query}%"))
+            (Customer.phone_number.ilike(f"%{search_query}%"))
         ).limit(10).all()
         
         # Search Products
         results['products'] = Product.query.filter(
-            (Product.name.ilike(f"%{search_query}%")) |
-            (Product.sku.ilike(f"%{search_query}%"))
+            (Product.product_name.ilike(f"%{search_query}%")) |
+            (Product.product_code.ilike(f"%{search_query}%"))
         ).limit(10).all()
         
         # Search Sales / Invoices
@@ -120,7 +120,7 @@ def search():
         # Search Payments
         results['payments'] = Payment.query.join(Customer).filter(
             (Customer.full_name.ilike(f"%{search_query}%")) |
-            (Payment.status.ilike(f"%{search_query}%"))
+            (Payment.payment_status.ilike(f"%{search_query}%"))
         ).limit(10).all()
         
     return render_template('search.html', query=search_query, results=results)

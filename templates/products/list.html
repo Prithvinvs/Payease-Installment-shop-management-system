@@ -64,9 +64,27 @@
             <input type="hidden" name="filter" value="{{ current_filter }}">
             {% endif %}
             
-            <div class="col-12 col-sm-6 col-md-4">
+            <div class="col-12 col-md-4 position-relative">
+                <label for="search" class="form-label text-muted fw-semibold">Search Product</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-primary"></i></span>
+                    <input type="text" name="search" id="search" class="form-control text-sm border-start-0 rounded-end-3 py-2" placeholder="Search by name, code, barcode..." value="{{ search_q or '' }}" autocomplete="off">
+                </div>
+                <!-- Search History Dropdown Popover -->
+                <div id="searchHistoryDropdown" class="position-absolute shadow-lg border rounded-3 w-100 bg-white mt-1 d-none" style="z-index: 1050; top: 100%; left: 0;">
+                    <div class="px-3 py-2 bg-light border-bottom text-xs font-semibold text-muted d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-clock-history me-1 text-primary"></i>Recent Search History</span>
+                        <button type="button" class="btn btn-link text-decoration-none text-xs text-muted p-0" onclick="clearSearchHistory(event)">Clear History</button>
+                    </div>
+                    <div id="searchHistoryItems" class="py-1" style="max-height: 220px; overflow-y: auto;">
+                        <!-- JS injected history items -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 col-sm-6 col-md-3">
                 <label for="category" class="form-label text-muted fw-semibold">Filter by Category</label>
-                <select name="category" id="category" class="form-select text-sm rounded-3">
+                <select name="category" id="category" class="form-select text-sm rounded-3 py-2">
                     <option value="">All Categories</option>
                     {% for c in categories %}
                     <option value="{{ c.id }}" {% if current_cat == c.id %}selected{% endif %}>{{ c.name }}</option>
@@ -74,9 +92,9 @@
                 </select>
             </div>
             
-            <div class="col-12 col-sm-6 col-md-4">
+            <div class="col-12 col-sm-6 col-md-3">
                 <label for="brand" class="form-label text-muted fw-semibold">Filter by Brand</label>
-                <select name="brand" id="brand" class="form-select text-sm rounded-3">
+                <select name="brand" id="brand" class="form-select text-sm rounded-3 py-2">
                     <option value="">All Brands</option>
                     {% for b in brands %}
                     <option value="{{ b.id }}" {% if current_brand == b.id %}selected{% endif %}>{{ b.brand_name }}</option>
@@ -84,9 +102,9 @@
                 </select>
             </div>
             
-            <div class="col-12 col-md-4 d-flex align-items-end gap-2">
-                <button type="submit" class="btn btn-primary text-sm px-4 rounded-3 w-100"><i class="bi bi-filter me-1.5"></i>Apply Filters</button>
-                <a href="{{ url_for('products.index') }}" class="btn btn-light border text-sm px-3 rounded-3"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <div class="col-12 col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary text-sm px-3 rounded-3 w-100 py-2"><i class="bi bi-filter me-1.5"></i>Apply Filters</button>
+                <a href="{{ url_for('products.index') }}" class="btn btn-light border text-sm px-3 rounded-3 py-2" title="Reset All Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
             </div>
         </form>
     </div>
@@ -222,15 +240,124 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+    .suggestion-item:hover {
+        background-color: #f8fafc;
+        color: #2563eb;
+    }
+</style>
 <script>
+    const PRODUCT_SEARCH_HISTORY_KEY = 'payease_product_search_history';
+
     $(document).ready(function() {
-        $('#productsTable').DataTable({
+        var table = $('#productsTable').DataTable({
             "order": [[1, "desc"]],
             "pageLength": 10,
             "columnDefs": [
                 { "orderable": false, "targets": [0, 10] }
             ]
         });
+
+        // Initialize DataTable filter on page load if search query exists
+        var initialSearch = $('#search').val().trim();
+        if (initialSearch) {
+            table.search(initialSearch).draw();
+            saveSearchQuery(initialSearch);
+        }
+
+        // Live letter-by-letter filtering as the user types
+        $('#search').on('input', function() {
+            var val = $(this).val();
+            table.search(val).draw();
+            renderSearchHistoryDropdown(val);
+        });
+
+        // Show search history dropdown when search box is clicked/focused
+        $('#search').on('focus click', function() {
+            renderSearchHistoryDropdown($(this).val());
+        });
+
+        // Save search keyword on form submit
+        $('#search').closest('form').on('submit', function() {
+            var val = $('#search').val().trim();
+            if (val) {
+                saveSearchQuery(val);
+            }
+        });
+
+        // Hide search history dropdown when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#search, #searchHistoryDropdown').length) {
+                $('#searchHistoryDropdown').addClass('d-none');
+            }
+        });
     });
+
+    function getSearchHistory() {
+        try {
+            return JSON.parse(localStorage.getItem(PRODUCT_SEARCH_HISTORY_KEY)) || [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveSearchQuery(query) {
+        query = query.trim();
+        if (!query) return;
+        let history = getSearchHistory();
+        history = history.filter(item => item.toLowerCase() !== query.toLowerCase());
+        history.unshift(query);
+        if (history.length > 8) history = history.slice(0, 8);
+        localStorage.setItem(PRODUCT_SEARCH_HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function clearSearchHistory(e) {
+        if (e) e.stopPropagation();
+        localStorage.removeItem(PRODUCT_SEARCH_HISTORY_KEY);
+        $('#searchHistoryDropdown').addClass('d-none');
+    }
+
+    function applyHistoryQuery(query) {
+        $('#search').val(query);
+        saveSearchQuery(query);
+        var table = $('#productsTable').DataTable();
+        table.search(query).draw();
+        $('#searchHistoryDropdown').addClass('d-none');
+    }
+
+    function renderSearchHistoryDropdown(currentInput) {
+        var history = getSearchHistory();
+        var itemsContainer = $('#searchHistoryItems');
+        itemsContainer.empty();
+
+        if (history.length === 0) {
+            $('#searchHistoryDropdown').addClass('d-none');
+            return;
+        }
+
+        var filterVal = (currentInput || '').toLowerCase().trim();
+        var matches = history;
+        if (filterVal) {
+            matches = history.filter(item => item.toLowerCase().includes(filterVal));
+        }
+
+        if (matches.length === 0) {
+            $('#searchHistoryDropdown').addClass('d-none');
+            return;
+        }
+
+        matches.forEach(function(item) {
+            var safeItem = item.replace(/'/g, "\\'");
+            var row = `
+                <div class="px-3 py-2 text-xs d-flex align-items-center justify-content-between suggestion-item" style="cursor: pointer;" onmousedown="applyHistoryQuery('${safeItem}')">
+                    <span class="text-dark"><i class="bi bi-clock-history text-muted me-2"></i>${item}</span>
+                    <span class="badge bg-light text-muted border text-xs">Recent</span>
+                </div>
+            `;
+            itemsContainer.append(row);
+        });
+
+        $('#searchHistoryDropdown').removeClass('d-none');
+    }
 </script>
 {% endblock %}

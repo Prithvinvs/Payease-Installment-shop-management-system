@@ -2,7 +2,7 @@
 Brand management routes blueprint.
 Handles CRUD actions for product brands.
 """
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 
 from database import db
@@ -131,3 +131,30 @@ def delete(id):
     
     flash(f"Brand '{brand.brand_name}' has been deleted successfully.", "success")
     return redirect(url_for('brands.index'))
+
+@brands_bp.route('/api/quick-add', methods=['POST'])
+@login_required
+@role_required(['Super Admin', 'Admin'])
+def quick_add():
+    """
+    JSON API for quick creation of product brand directly from product form.
+    """
+    data = request.get_json(force=True, silent=True) or request.form or {}
+    name = (data.get('brand_name') or '').strip()
+    desc = (data.get('description') or '').strip()
+    
+    if not name:
+        return jsonify({'error': 'Brand name is required'}), 400
+        
+    existing = Brand.query.filter(Brand.brand_name.ilike(name)).first()
+    if existing:
+        return jsonify({'id': existing.id, 'name': existing.brand_name}), 200
+        
+    brand = Brand(
+        brand_name=name,
+        description=desc,
+        status='active'
+    )
+    db.session.add(brand)
+    db.session.commit()
+    return jsonify({'id': brand.id, 'name': brand.brand_name}), 201

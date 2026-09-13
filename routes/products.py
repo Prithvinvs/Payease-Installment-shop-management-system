@@ -71,9 +71,21 @@ def index():
     filter_type = request.args.get('filter', '').strip().lower()
     cat_id = request.args.get('category', '').strip()
     brand_id = request.args.get('brand', '').strip()
+    search_q = request.args.get('search', '').strip() or request.args.get('q', '').strip()
     
     query = Product.query.filter(Product.deleted_at == None)
     
+    # Apply search filter
+    if search_q:
+        query = query.outerjoin(Category).outerjoin(Brand).filter(
+            (Product.product_name.ilike(f"%{search_q}%")) |
+            (Product.product_code.ilike(f"%{search_q}%")) |
+            (Product.barcode.ilike(f"%{search_q}%")) |
+            (Product.description.ilike(f"%{search_q}%")) |
+            (Category.name.ilike(f"%{search_q}%")) |
+            (Brand.brand_name.ilike(f"%{search_q}%"))
+        ).distinct()
+
     # Apply category/brand filters
     if cat_id:
         query = query.filter(Product.category_id == cat_id)
@@ -105,7 +117,8 @@ def index():
         brands=brands,
         current_filter=filter_type,
         current_cat=cat_id,
-        current_brand=brand_id
+        current_brand=brand_id,
+        search_q=search_q
     )
 
 @products_bp.route('/add', methods=['GET', 'POST'])
@@ -121,8 +134,8 @@ def add():
     categories = Category.query.filter_by(status='active').all()
     brands = Brand.query.filter_by(status='active').all()
     
-    form.category_id.choices = [('', '-- Select Category --')] + [(c.id, f"{c.name} ({c.category_code})") for c in categories]
-    form.brand_id.choices = [('', '-- Select Brand --')] + [(b.id, b.brand_name) for b in brands]
+    form.category_id.choices = [('', '-- Select Category --')] + [(c.id, f"{c.name} ({c.category_code})") for c in categories] + [('__NEW_CATEGORY__', '+ Create New Category...')]
+    form.brand_id.choices = [('', '-- Select Brand --')] + [(b.id, b.brand_name) for b in brands] + [('__NEW_BRAND__', '+ Create New Brand...')]
     
     if form.validate_on_submit():
         image_path = None
@@ -199,8 +212,8 @@ def edit(id):
     
     categories = Category.query.filter_by(status='active').all()
     brands = Brand.query.filter_by(status='active').all()
-    form.category_id.choices = [('', '-- Select Category --')] + [(c.id, f"{c.name} ({c.category_code})") for c in categories]
-    form.brand_id.choices = [('', '-- Select Brand --')] + [(b.id, b.brand_name) for b in brands]
+    form.category_id.choices = [('', '-- Select Category --')] + [(c.id, f"{c.name} ({c.category_code})") for c in categories] + [('__NEW_CATEGORY__', '+ Create New Category...')]
+    form.brand_id.choices = [('', '-- Select Brand --')] + [(b.id, b.brand_name) for b in brands] + [('__NEW_BRAND__', '+ Create New Brand...')]
     
     if form.validate_on_submit():
         if form.product_image.data:

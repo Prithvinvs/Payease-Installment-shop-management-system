@@ -52,9 +52,9 @@ def collect_payment():
     selected_customer = None
     selected_plan = None
     if pre_customer_id:
-        selected_customer = Customer.query.get(pre_customer_id)
+        selected_customer = db.session.get(Customer, pre_customer_id)
     if pre_plan_id:
-        selected_plan = InstalmentPlan.query.get(pre_plan_id)
+        selected_plan = db.session.get(InstalmentPlan, pre_plan_id)
         if selected_plan and not selected_customer:
             selected_customer = selected_plan.customer
 

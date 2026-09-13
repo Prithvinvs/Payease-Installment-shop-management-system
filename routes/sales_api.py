@@ -137,6 +137,9 @@ def create_sale():
     down_payment_val = data.get('down_payment', 0.0)
     total_instalments = int(data.get('total_instalments', 0))
     due_day = int(data.get('due_day', 5))
+    plan_type = (data.get('plan_type') or 'monthly').strip().lower()
+    if plan_type not in ['weekly', 'monthly']:
+        plan_type = 'monthly'
     
     # 1. Validate Customer
     customer = Customer.query.filter_by(id=cust_id, deleted_at=None).first()
@@ -255,8 +258,9 @@ def create_sale():
             
             from datetime import timedelta
             start_dt = datetime.utcnow()
-            first_due = start_dt + timedelta(days=30)
-            last_due = start_dt + timedelta(days=total_instalments * 30)
+            days_per_period = 7 if plan_type == 'weekly' else 30
+            first_due = start_dt + timedelta(days=days_per_period)
+            last_due = start_dt + timedelta(days=total_instalments * days_per_period)
             
             plan = InstalmentPlan(
                 plan_number=plan_num,
@@ -268,6 +272,7 @@ def create_sale():
                 remaining_balance=remaining_balance,
                 number_of_instalments=total_instalments,
                 monthly_emi=inst_amount,
+                plan_type=plan_type,
                 interest_rate=decimal.Decimal(0.0),
                 processing_fee=decimal.Decimal(0.0),
                 start_date=start_dt,
@@ -281,7 +286,7 @@ def create_sale():
             
             # Create InstalmentSchedule breakdown rows
             for i in range(1, total_instalments + 1):
-                due_dt = start_dt + timedelta(days=i * 30)
+                due_dt = start_dt + timedelta(days=i * days_per_period)
                 sched = InstalmentSchedule(
                     plan_id=plan.id,
                     instalment_number=i,
@@ -289,7 +294,7 @@ def create_sale():
                     amount=inst_amount,
                     balance=inst_amount,
                     payment_status='pending',
-                    remarks=f"Generated instalment #{i}."
+                    remarks=f"Generated {plan_type} instalment #{i}."
                 )
                 db.session.add(sched)
             
