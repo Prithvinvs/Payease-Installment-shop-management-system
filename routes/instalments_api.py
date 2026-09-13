@@ -28,6 +28,8 @@ def plan_to_dict(p):
         'remaining_balance': float(p.remaining_balance),
         'number_of_instalments': p.number_of_instalments,
         'monthly_emi': float(p.monthly_emi),
+        'plan_type': getattr(p, 'plan_type', 'monthly'),
+        'period_unit_label': getattr(p, 'period_unit_label', 'mo'),
         'interest_rate': float(p.interest_rate),
         'processing_fee': float(p.processing_fee),
         'start_date': p.start_date.strftime('%Y-%m-%d'),
@@ -59,7 +61,7 @@ def get_plans():
 @instalments_api_bp.route('/instalments/<string:id>', methods=['GET'])
 @login_required
 def get_plan(id):
-    p = InstalmentPlan.query.get(id)
+    p = db.session.get(InstalmentPlan, id)
     if not p:
         return jsonify({'error': 'Instalment plan not found'}), 404
     return jsonify(plan_to_dict(p)), 200
@@ -80,7 +82,7 @@ def reschedule():
     new_amount_val = data.get('new_amount', None)
     remarks_text = data.get('remarks', '').strip()
     
-    plan = InstalmentPlan.query.get(plan_id)
+    plan = db.session.get(InstalmentPlan, plan_id)
     if not plan:
         return jsonify({'error': 'Instalment plan not found'}), 404
         

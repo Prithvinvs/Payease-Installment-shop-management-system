@@ -41,8 +41,9 @@
                         <th scope="col" class="text-end">Grand Total</th>
                         <th scope="col" class="text-end">Down Payment</th>
                         <th scope="col" class="text-end">Unpaid Balance</th>
-                        <th scope="col" class="text-end">Monthly EMI</th>
+                        <th scope="col" class="text-end">EMI Amount</th>
                         <th scope="col" class="text-center">Tenure</th>
+                        <th scope="col" class="text-center">Type</th>
                         <th scope="col">Status</th>
                         <th scope="col" class="text-end pe-4" style="width: 100px;">Actions</th>
                     </tr>
@@ -65,8 +66,15 @@
                         <td class="fw-bold text-dark text-end">₹{{ "{:,.2f}".format(p.total_amount) }}</td>
                         <td class="text-muted text-end">₹{{ "{:,.2f}".format(p.down_payment) }}</td>
                         <td class="fw-bold text-danger text-end">₹{{ "{:,.2f}".format(p.outstanding_amount) }}</td>
-                        <td class="fw-semibold text-primary text-end">₹{{ "{:,.2f}".format(p.monthly_emi) }}</td>
-                        <td class="text-center fw-medium">{{ p.number_of_instalments }} mo</td>
+                        <td class="fw-semibold text-primary text-end">₹{{ "{:,.2f}".format(p.monthly_emi) }} / {{ p.period_unit_label }}</td>
+                        <td class="text-center fw-medium">{{ p.number_of_instalments }} {{ p.period_unit_label }}</td>
+                        <td class="text-center">
+                            {% if p.plan_type == 'weekly' %}
+                            <span class="badge bg-info-light text-info rounded-pill text-xs">Weekly</span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary rounded-pill text-xs">Monthly</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if p.status == 'active' %}
                             <span class="badge bg-primary-light text-primary rounded-pill text-xs">Active</span>

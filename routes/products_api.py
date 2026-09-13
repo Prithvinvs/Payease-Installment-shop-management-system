@@ -16,10 +16,10 @@ products_api_bp = Blueprint('products_api', __name__, url_prefix='/api')
 def product_to_dict(p):
     return {
         'id': p.id,
-        'product_code': p.product_code,
-        'barcode': p.barcode,
+        'product_code': p.product_code or '',
+        'barcode': p.barcode or '',
         'qr_code': p.qr_code or '',
-        'product_name': p.product_name,
+        'product_name': p.product_name or '',
         'description': p.description or '',
         'purchase_price': float(p.purchase_price),
         'selling_price': float(p.selling_price),

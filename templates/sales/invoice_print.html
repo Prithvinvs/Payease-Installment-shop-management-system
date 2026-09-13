@@ -94,8 +94,8 @@
             </div>
             <div class="col-6 text-end">
                 <strong class="text-xs text-muted uppercase d-block mb-1">Invoice Info:</strong>
-                <p class="text-dark mb-0">Payment: <strong>{{ sale.payment_status | uppercase }}</strong></p>
-                <p class="text-dark mb-0">Status: <strong>{{ sale.sale_status | uppercase }}</strong></p>
+                <p class="text-dark mb-0">Payment: <strong>{{ sale.payment_status | upper }}</strong></p>
+                <p class="text-dark mb-0">Status: <strong>{{ sale.sale_status | upper }}</strong></p>
                 <p class="text-dark mb-0">Issued By: USR-{{ sale.created_by or 'System' }}</p>
             </div>
         </div>

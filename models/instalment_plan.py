@@ -34,6 +34,7 @@ class InstalmentPlan(db.Model):
     first_due_date = db.Column(db.DateTime, nullable=False)
     last_due_date = db.Column(db.DateTime, nullable=False)
     
+    plan_type = db.Column(db.String(20), nullable=False, default='monthly') # weekly, monthly
     status = db.Column(db.String(20), nullable=False, default='active') # active, completed, overdue, cancelled
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -74,6 +75,22 @@ class InstalmentPlan(db.Model):
     @property
     def overdue_count(self):
         return sum(1 for item in self.schedules if item.payment_status == 'overdue')
+
+    @property
+    def amount_per_instalment(self):
+        return self.monthly_emi
+
+    @property
+    def period_unit_label(self):
+        return 'wk' if self.plan_type == 'weekly' else 'mo'
+
+    @property
+    def period_name(self):
+        return 'Week' if self.plan_type == 'weekly' else 'Month'
+
+    @property
+    def period_plural_name(self):
+        return 'Weeks' if self.plan_type == 'weekly' else 'Months'
 
     def __repr__(self):
         return f"<InstalmentPlan {self.plan_number} (Remaining: {self.outstanding_amount})>"

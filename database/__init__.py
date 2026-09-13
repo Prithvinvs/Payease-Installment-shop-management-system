@@ -41,12 +41,30 @@ def init_db(app):
         
         # Verify connection and create tables if needed
         db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-        if 'postgresql' in db_uri or 'supabase' in db_uri:
-            app.logger.info("Connected to Supabase PostgreSQL Database (Managed via Supabase migrations).")
+        is_postgres = 'postgresql' in db_uri or 'supabase' in db_uri
+        
+        if is_postgres:
+            try:
+                with db.engine.connect() as conn:
+                    app.logger.info("Connected to Supabase PostgreSQL Database (Managed via Supabase migrations).")
+                    return
+            except Exception as e:
+                app.logger.warning(f"Could not connect to PostgreSQL database ({e}). Falling back to local SQLite Database...")
+                app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instalment_shop.db'
+                try:
+                    db.engine.dispose()
+                except Exception:
+                    pass
+                if 'sqlalchemy' in app.extensions:
+                    del app.extensions['sqlalchemy']
+                db.init_app(app)
+                
+        app.logger.info("Connecting to local SQLite Database...")
+        db.create_all()
+
+        if Role.query.first() is not None:
+            app.logger.info("Database tables already populated.")
             return
-        else:
-            app.logger.info("Connecting to local SQLite Database...")
-            db.create_all()
             
         # --- 1. Seed Roles ---
         default_roles = [

@@ -23,17 +23,28 @@
 <!-- Date and Status Quick filters -->
 <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body p-3">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 text-sm">
-            <div class="d-flex flex-wrap gap-1.5">
-                <a href="{{ url_for('sales.index') }}" class="btn btn-xs rounded-pill {% if not current_filter %}btn-primary{% else %}btn-light border{% endif %}">All Invoices</a>
-                <a href="{{ url_for('sales.index', filter='today') }}" class="btn btn-xs rounded-pill {% if current_filter == 'today' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">Today</a>
-                <a href="{{ url_for('sales.index', filter='this_week') }}" class="btn btn-xs rounded-pill {% if current_filter == 'this_week' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">This Week</a>
-                <a href="{{ url_for('sales.index', filter='this_month') }}" class="btn btn-xs rounded-pill {% if current_filter == 'this_month' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">This Month</a>
-                <a href="{{ url_for('sales.index', filter='paid') }}" class="btn btn-xs rounded-pill {% if current_filter == 'paid' %}btn-success text-white{% else %}btn-light border{% endif %}">Fully Paid</a>
-                <a href="{{ url_for('sales.index', filter='pending') }}" class="btn btn-xs rounded-pill {% if current_filter == 'pending' %}btn-warning text-dark{% else %}btn-light border{% endif %}">Pending Collections</a>
-                <a href="{{ url_for('sales.index', filter='cancelled') }}" class="btn btn-xs rounded-pill {% if current_filter == 'cancelled' %}btn-danger text-white{% else %}btn-light border{% endif %}">Cancelled</a>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 text-sm w-100">
+                <div class="d-flex flex-wrap gap-1.5">
+                    <a href="{{ url_for('sales.index') }}" class="btn btn-xs rounded-pill {% if not current_filter %}btn-primary{% else %}btn-light border{% endif %}">All Invoices</a>
+                    <a href="{{ url_for('sales.index', filter='today') }}" class="btn btn-xs rounded-pill {% if current_filter == 'today' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">Today</a>
+                    <a href="{{ url_for('sales.index', filter='this_week') }}" class="btn btn-xs rounded-pill {% if current_filter == 'this_week' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">This Week</a>
+                    <a href="{{ url_for('sales.index', filter='this_month') }}" class="btn btn-xs rounded-pill {% if current_filter == 'this_month' %}btn-light border-primary text-primary{% else %}btn-light border{% endif %}">This Month</a>
+                    <a href="{{ url_for('sales.index', filter='paid') }}" class="btn btn-xs rounded-pill {% if current_filter == 'paid' %}btn-success text-white{% else %}btn-light border{% endif %}">Fully Paid</a>
+                    <a href="{{ url_for('sales.index', filter='pending') }}" class="btn btn-xs rounded-pill {% if current_filter == 'pending' %}btn-warning text-dark{% else %}btn-light border{% endif %}">Pending Collections</a>
+                    <a href="{{ url_for('sales.index', filter='cancelled') }}" class="btn btn-xs rounded-pill {% if current_filter == 'cancelled' %}btn-danger text-white{% else %}btn-light border{% endif %}">Cancelled</a>
+                </div>
+                
+                <form action="{{ url_for('sales.index') }}" method="GET" class="d-flex align-items-center gap-1 ms-auto position-relative" style="min-width: 280px;">
+                    {% if current_filter %}<input type="hidden" name="filter" value="{{ current_filter }}">{% endif %}
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 rounded-start-pill text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" id="salesSearch" class="form-control border-start-0 rounded-end-pill text-xs py-1.5" placeholder="Search product name, code, invoice..." value="{{ search_q or '' }}" autocomplete="off">
+                    </div>
+                    {% if search_q %}
+                    <a href="{{ url_for('sales.index', filter=current_filter) }}" class="btn btn-sm btn-light border rounded-circle text-muted px-2" title="Clear Search"><i class="bi bi-x-lg"></i></a>
+                    {% endif %}
+                </form>
             </div>
-        </div>
     </div>
 </div>
 
@@ -114,9 +125,20 @@
 {% block scripts %}
 <script>
     $(document).ready(function() {
-        $('#salesTable').DataTable({
+        var table = $('#salesTable').DataTable({
             "order": [[1, "desc"]],
             "pageLength": 10
+        });
+
+        // Initialize DataTable filter on page load if search query exists
+        var initialSearch = $('#salesSearch').val().trim();
+        if (initialSearch) {
+            table.search(initialSearch).draw();
+        }
+
+        // Live letter-by-letter filtering as the user enters text
+        $('#salesSearch').on('input', function() {
+            table.search($(this).val()).draw();
         });
     });
 

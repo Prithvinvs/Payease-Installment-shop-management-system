@@ -45,7 +45,7 @@ def create_app(config_class=Config):
     from models.user import User
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
 
     # Register Blueprints
     from routes.dashboard import dashboard_bp
@@ -103,6 +103,10 @@ def create_app(config_class=Config):
     @app.context_processor
     def inject_now():
         return {'current_year': datetime.utcnow().year}
+
+    @app.template_filter('uppercase')
+    def uppercase_filter(s):
+        return str(s).upper() if s is not None else ''
 
     # Error handling routes
     @app.errorhandler(403)

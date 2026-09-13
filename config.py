@@ -1,5 +1,7 @@
 import os
 import secrets
+import socket
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Load environment variables from .env
@@ -14,13 +16,21 @@ class Config:
     # Database
     DATABASE_URL = os.environ.get('DATABASE_URL')
     
-    # Handle SQLAlchemy/Supabase scheme compatibility (converting postgres:// to postgresql:// if needed)
+    # Handle SQLAlchemy/Supabase scheme compatibility and host DNS resolution
+    SQLALCHEMY_DATABASE_URI = None
     if DATABASE_URL and not DATABASE_URL.startswith('#') and 'YOUR_DB_PASSWORD' not in DATABASE_URL and 'your-db-password' not in DATABASE_URL:
-        if DATABASE_URL.startswith("postgres://"):
-            SQLALCHEMY_DATABASE_URI = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-        else:
-            SQLALCHEMY_DATABASE_URI = DATABASE_URL
-    else:
+        db_url = DATABASE_URL.replace("postgres://", "postgresql://", 1) if DATABASE_URL.startswith("postgres://") else DATABASE_URL
+        try:
+            parsed = urlparse(db_url)
+            if parsed.hostname:
+                # Fast DNS lookup check to ensure host is resolvable
+                socket.gethostbyname(parsed.hostname)
+                SQLALCHEMY_DATABASE_URI = db_url
+        except Exception:
+            # Host name lookup failed or invalid URI
+            SQLALCHEMY_DATABASE_URI = None
+
+    if not SQLALCHEMY_DATABASE_URI:
         # Fallback to SQLite for immediate local execution
         SQLALCHEMY_DATABASE_URI = 'sqlite:///instalment_shop.db'
         

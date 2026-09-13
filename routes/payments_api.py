@@ -70,7 +70,7 @@ def get_payments():
 @payments_api_bp.route('/payments/<string:id>', methods=['GET'])
 @login_required
 def get_payment(id):
-    p = Payment.query.get(id)
+    p = db.session.get(Payment, id)
     if not p:
         return jsonify({'error': 'Payment record not found'}), 404
     return jsonify(payment_to_dict(p)), 200

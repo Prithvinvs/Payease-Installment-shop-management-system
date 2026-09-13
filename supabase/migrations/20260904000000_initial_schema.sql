@@ -208,6 +208,7 @@ CREATE TABLE IF NOT EXISTS public.instalment_plans (
     first_due_date TIMESTAMPTZ NOT NULL,
     last_due_date TIMESTAMPTZ NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'overdue', 'cancelled')),
+    plan_type VARCHAR(20) NOT NULL DEFAULT 'monthly' CHECK (plan_type IN ('weekly', 'monthly')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by INT REFERENCES public.users(id) ON DELETE SET NULL

@@ -239,10 +239,11 @@ def profile(id):
     
     # Sales transactions events
     for sale in customer.sales:
+        prod_title = sale.product_summary
         timeline.append({
             'date': sale.sale_date,
-            'title': f"Purchased {sale.product.name}",
-            'desc': f"Invoice {sale.invoice_number} created. Total value: ₹{sale.total_amount:,.2f} with down-payment: ₹{sale.down_payment:,.2f}.",
+            'title': f"Purchased {prod_title}",
+            'desc': f"Invoice {sale.invoice_number} created. Total value: ₹{float(sale.grand_total):,.2f} with down-payment: ₹{float(sale.down_payment):,.2f}.",
             'icon': 'bi-cart-check',
             'color': 'success'
         })
@@ -259,10 +260,12 @@ def profile(id):
             
     # Payments collections events
     for pay in customer.payments:
+        rec_id = pay.receipt_number or (f"REC-{pay.id[:8]}" if pay.id else "REC-PAYMENT")
+        inv_no = pay.invoice_number or (pay.sale.invoice_number if pay.sale else 'N/A')
         timeline.append({
             'date': pay.payment_date,
-            'title': f"Payment Received: ₹{pay.payment_amount:,.2f}",
-            'desc': f"Receipt ID: REC-{pay.id} recorded against Invoice {pay.sale.invoice_number}.",
+            'title': f"Payment Received: ₹{float(pay.payment_amount):,.2f}",
+            'desc': f"Receipt ID: {rec_id} recorded against Invoice {inv_no}.",
             'icon': 'bi-cash-coin',
             'color': 'warning'
         })

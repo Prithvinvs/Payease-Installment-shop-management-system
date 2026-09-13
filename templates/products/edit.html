@@ -39,14 +39,20 @@
                     
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-sm-6">
-                            <label for="category_id" class="form-label text-muted fw-semibold">Category <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="category_id" class="form-label text-muted fw-semibold mb-1">Category <span class="text-danger">*</span></label>
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#quickCategoryModal" class="text-primary text-xs text-decoration-none fw-semibold mb-1"><i class="bi bi-plus-circle me-1"></i>New Category</a>
+                            </div>
                             {{ form.category_id(class="form-select rounded-3" + (" is-invalid" if form.category_id.errors else "")) }}
                             {% for err in form.category_id.errors %}
                             <div class="invalid-feedback">{{ err }}</div>
                             {% endfor %}
                         </div>
                         <div class="col-12 col-sm-6">
-                            <label for="brand_id" class="form-label text-muted fw-semibold">Brand <span class="text-danger">*</span></label>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="brand_id" class="form-label text-muted fw-semibold mb-1">Brand <span class="text-danger">*</span></label>
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#quickBrandModal" class="text-primary text-xs text-decoration-none fw-semibold mb-1"><i class="bi bi-plus-circle me-1"></i>New Brand</a>
+                            </div>
                             {{ form.brand_id(class="form-select rounded-3" + (" is-invalid" if form.brand_id.errors else "")) }}
                             {% for err in form.brand_id.errors %}
                             <div class="invalid-feedback">{{ err }}</div>
@@ -190,10 +196,159 @@
     </div>
 </form>
 
+<!-- Quick Add Category Modal -->
+<div class="modal fade" id="quickCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-folder-plus text-primary me-2"></i>Create New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-sm">
+                <div class="mb-3">
+                    <label for="quick_cat_name" class="form-label text-muted fw-semibold">Category Name <span class="text-danger">*</span></label>
+                    <input type="text" id="quick_cat_name" class="form-control rounded-3 py-2" placeholder="e.g. Electronics, Home Appliances">
+                </div>
+                <div>
+                    <label for="quick_cat_desc" class="form-label text-muted fw-semibold">Description (Optional)</label>
+                    <textarea id="quick_cat_desc" class="form-control rounded-3" rows="2" placeholder="Brief description..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-sm px-3 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" onclick="submitQuickCategory()" class="btn btn-primary btn-sm px-4 rounded-pill">Create Category</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Brand Modal -->
+<div class="modal fade" id="quickBrandModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-award text-primary me-2"></i>Create New Brand</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-sm">
+                <div class="mb-3">
+                    <label for="quick_brand_name" class="form-label text-muted fw-semibold">Brand Name <span class="text-danger">*</span></label>
+                    <input type="text" id="quick_brand_name" class="form-control rounded-3 py-2" placeholder="e.g. Samsung, Apple, Sony">
+                </div>
+                <div>
+                    <label for="quick_brand_desc" class="form-label text-muted fw-semibold">Description (Optional)</label>
+                    <textarea id="quick_brand_desc" class="form-control rounded-3" rows="2" placeholder="Brief description..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-sm px-3 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" onclick="submitQuickBrand()" class="btn btn-primary btn-sm px-4 rounded-pill">Create Brand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+    $(document).ready(function() {
+        // Trigger modal when user selects "+ Create New Category..." from list
+        $('#category_id').change(function() {
+            if ($(this).val() === '__NEW_CATEGORY__') {
+                $(this).val('');
+                var modal = new bootstrap.Modal(document.getElementById('quickCategoryModal'));
+                modal.show();
+            }
+        });
+
+        // Trigger modal when user selects "+ Create New Brand..." from list
+        $('#brand_id').change(function() {
+            if ($(this).val() === '__NEW_BRAND__') {
+                $(this).val('');
+                var modal = new bootstrap.Modal(document.getElementById('quickBrandModal'));
+                modal.show();
+            }
+        });
+    });
+
+    function submitQuickCategory() {
+        const name = $('#quick_cat_name').val().trim();
+        const desc = $('#quick_cat_desc').val().trim();
+        if (!name) {
+            alert("Please enter category name.");
+            return;
+        }
+        
+        $.ajax({
+            url: '/categories/api/quick-add',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ category_name: name, description: desc }),
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+            success: function(res) {
+                const label = res.code ? `${res.name} (${res.code})` : res.name;
+                let existingOpt = $('#category_id option[value="' + res.id + '"]');
+                if (existingOpt.length > 0) {
+                    existingOpt.prop('selected', true);
+                } else {
+                    let newOpt = $('<option>', { value: res.id, text: label, selected: true });
+                    let addOpt = $('#category_id option[value="__NEW_CATEGORY__"]');
+                    if (addOpt.length > 0) {
+                        newOpt.insertBefore(addOpt);
+                    } else {
+                        $('#category_id').append(newOpt);
+                    }
+                }
+                $('#quick_cat_name').val('');
+                $('#quick_cat_desc').val('');
+                bootstrap.Modal.getInstance(document.getElementById('quickCategoryModal')).hide();
+            },
+            error: function(xhr) {
+                const err = xhr.responseJSON ? xhr.responseJSON.error : "Failed to create category";
+                alert(err);
+            }
+        });
+    }
+
+    function submitQuickBrand() {
+        const name = $('#quick_brand_name').val().trim();
+        const desc = $('#quick_brand_desc').val().trim();
+        if (!name) {
+            alert("Please enter brand name.");
+            return;
+        }
+        
+        $.ajax({
+            url: '/brands/api/quick-add',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ brand_name: name, description: desc }),
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+            success: function(res) {
+                let existingOpt = $('#brand_id option[value="' + res.id + '"]');
+                if (existingOpt.length > 0) {
+                    existingOpt.prop('selected', true);
+                } else {
+                    let newOpt = $('<option>', { value: res.id, text: res.name, selected: true });
+                    let addOpt = $('#brand_id option[value="__NEW_BRAND__"]');
+                    if (addOpt.length > 0) {
+                        newOpt.insertBefore(addOpt);
+                    } else {
+                        $('#brand_id').append(newOpt);
+                    }
+                }
+                $('#quick_brand_name').val('');
+                $('#quick_brand_desc').val('');
+                bootstrap.Modal.getInstance(document.getElementById('quickBrandModal')).hide();
+            },
+            error: function(xhr) {
+                const err = xhr.responseJSON ? xhr.responseJSON.error : "Failed to create brand";
+                alert(err);
+            }
+        });
+    }
+
     function previewImage(input) {
         const preview = document.getElementById('imagePreview');
         const icon = document.getElementById('imagePlaceholderIcon');

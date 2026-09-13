@@ -41,5 +41,33 @@ class Sale(db.Model):
     payments = db.relationship('Payment', back_populates='sale', lazy=True, cascade="all, delete-orphan")
     creator = db.relationship('User', foreign_keys=[created_by])
 
+    @property
+    def product_summary(self):
+        if not self.items:
+            return "N/A"
+        names = [item.product.product_name for item in self.items if item and item.product]
+        return ", ".join(names) if names else "Products"
+
+    @property
+    def product(self):
+        """
+        Backward compatibility proxy object allowing sale.product.name access.
+        """
+        class ProductProxy:
+            def __init__(self, summary):
+                self.name = summary
+                self.product_name = summary
+            def __str__(self):
+                return self.name
+        return ProductProxy(self.product_summary)
+
+    @property
+    def total_amount(self):
+        return self.grand_total
+
+    @property
+    def status(self):
+        return self.payment_status
+
     def __repr__(self):
         return f"<Sale {self.invoice_number} (Total: {self.grand_total}, Status: {self.sale_status})>"

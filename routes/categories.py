@@ -4,7 +4,7 @@ Handles CRUD actions for product categories.
 """
 from datetime import datetime
 import uuid
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 
 from database import db
@@ -149,3 +149,32 @@ def delete(id):
     
     flash(f"Category '{cat.name}' has been deleted successfully.", "success")
     return redirect(url_for('categories.index'))
+
+@categories_bp.route('/api/quick-add', methods=['POST'])
+@login_required
+@role_required(['Super Admin', 'Admin'])
+def quick_add():
+    """
+    JSON API for quick creation of product category directly from product form.
+    """
+    data = request.get_json(force=True, silent=True) or request.form or {}
+    name = (data.get('category_name') or '').strip()
+    desc = (data.get('description') or '').strip()
+    
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+        
+    existing = Category.query.filter(Category.name.ilike(name)).first()
+    if existing:
+        return jsonify({'id': existing.id, 'name': existing.name, 'code': existing.category_code}), 200
+        
+    code = generate_category_code()
+    cat = Category(
+        category_code=code,
+        name=name,
+        description=desc,
+        status='active'
+    )
+    db.session.add(cat)
+    db.session.commit()
+    return jsonify({'id': cat.id, 'name': cat.name, 'code': cat.category_code}), 201
