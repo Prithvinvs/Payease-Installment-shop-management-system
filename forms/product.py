@@ -33,9 +33,14 @@ class ProductForm(FlaskForm):
         NumberRange(min=0.01, message="Purchase price must be greater than zero.")
     ])
     
-    selling_price = DecimalField('Selling Price', validators=[
-        DataRequired(message="Selling price is required."),
-        NumberRange(min=0.01, message="Selling price must be greater than zero.")
+    ready_price = DecimalField('Ready Price', validators=[
+        DataRequired(message="Ready price is required."),
+        NumberRange(min=0.01, message="Ready price must be greater than zero.")
+    ])
+
+    installment_price = DecimalField('Instalment Price', validators=[
+        Optional(),
+        NumberRange(min=0.01, message="Instalment price must be greater than zero.")
     ])
     
     gst_percentage = DecimalField('GST Percentage (%)', default=18.0, validators=[
@@ -78,13 +83,21 @@ class ProductForm(FlaskForm):
         self.product_id = kwargs.pop('product_id', None)
         super(ProductForm, self).__init__(*args, **kwargs)
 
-    def validate_selling_price(self, field):
+    def validate_ready_price(self, field):
         """
-        Enforce business rule: Selling price must be greater than purchase price.
+        Enforce business rule: Ready price must be greater than purchase price.
         """
         if self.purchase_price.data and field.data:
             if field.data <= self.purchase_price.data:
-                raise ValidationError("Selling price must be greater than purchase price.")
+                raise ValidationError("Ready price must be greater than purchase price.")
+
+    def validate_installment_price(self, field):
+        """
+        Enforce business rule: If provided, instalment price should be greater than purchase price.
+        """
+        if self.purchase_price.data and field.data:
+            if field.data <= self.purchase_price.data:
+                raise ValidationError("Instalment price must be greater than purchase price.")
 
     def validate_product_name(self, field):
         """

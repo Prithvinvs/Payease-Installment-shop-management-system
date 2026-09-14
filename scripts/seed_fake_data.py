@@ -192,16 +192,16 @@ def seed_fake_data():
         for pcode, barcode, pname, cat_code, bname, p_price, s_price, stock in products_raw:
             prod = Product.query.filter_by(product_code=pcode).first()
             if not prod:
+                inst_p = round(s_price * 1.08, 2) if stock % 2 == 0 else None
                 prod = Product(
                     product_code=pcode,
-                    barcode=barcode,
-                    qr_code=pcode,
                     product_name=pname,
                     category_id=category_objs[cat_code].id,
                     brand_id=brand_objs[bname].id,
                     description=f"{pname} with official manufacturer warranty and instalment eligibility.",
                     purchase_price=decimal.Decimal(str(p_price)),
-                    selling_price=decimal.Decimal(str(s_price)),
+                    ready_price=decimal.Decimal(str(s_price)),
+                    installment_price=decimal.Decimal(str(inst_p)) if inst_p else None,
                     gst_percentage=decimal.Decimal('18.0'),
                     discount_percentage=decimal.Decimal('0.0'),
                     current_stock=stock,

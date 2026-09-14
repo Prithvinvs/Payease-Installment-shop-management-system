@@ -17,12 +17,12 @@ def product_to_dict(p):
     return {
         'id': p.id,
         'product_code': p.product_code or '',
-        'barcode': p.barcode or '',
-        'qr_code': p.qr_code or '',
         'product_name': p.product_name or '',
         'description': p.description or '',
         'purchase_price': float(p.purchase_price),
-        'selling_price': float(p.selling_price),
+        'ready_price': float(p.ready_price),
+        'installment_price': float(p.installment_price) if p.installment_price is not None else None,
+        'selling_price': float(p.ready_price),
         'gst_percentage': float(p.gst_percentage),
         'discount_percentage': float(p.discount_percentage),
         'current_stock': p.current_stock,
@@ -31,8 +31,8 @@ def product_to_dict(p):
         'unit': p.unit,
         'product_image': p.product_image or '',
         'status': p.status,
-        'category': p.category.name,
-        'brand': p.brand.brand_name,
+        'category': p.category.name if p.category else '',
+        'brand': p.brand.brand_name if p.brand else '',
         'is_low_stock': p.is_low_stock,
         'is_out_of_stock': p.is_out_of_stock,
         'stock_status': p.stock_status,
@@ -139,8 +139,7 @@ def search_products():
         Product.deleted_at == None
     ).filter(
         (Product.product_name.ilike(f"%{q}%")) |
-        (Product.product_code.ilike(f"%{q}%")) |
-        (Product.barcode.ilike(f"%{q}%"))
+        (Product.product_code.ilike(f"%{q}%"))
     ).limit(20).all()
     
     return jsonify([product_to_dict(p) for p in results]), 200

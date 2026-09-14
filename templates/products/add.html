@@ -77,17 +77,24 @@
                 </div>
                 <div class="card-body p-4 text-sm">
                     <div class="row g-3 mb-3">
-                        <div class="col-12 col-sm-6">
+                        <div class="col-12 col-sm-4">
                             <label for="purchase_price" class="form-label text-muted fw-semibold">Purchase Price (₹) <span class="text-danger">*</span></label>
                             {{ form.purchase_price(class="form-control rounded-3" + (" is-invalid" if form.purchase_price.errors else ""), placeholder="0.00") }}
                             {% for err in form.purchase_price.errors %}
                             <div class="invalid-feedback">{{ err }}</div>
                             {% endfor %}
                         </div>
-                        <div class="col-12 col-sm-6">
-                            <label for="selling_price" class="form-label text-muted fw-semibold">Selling Price (₹) <span class="text-danger">*</span></label>
-                            {{ form.selling_price(class="form-control rounded-3" + (" is-invalid" if form.selling_price.errors else ""), placeholder="0.00") }}
-                            {% for err in form.selling_price.errors %}
+                        <div class="col-12 col-sm-4">
+                            <label for="ready_price" class="form-label text-muted fw-semibold">Ready Price (₹) <span class="text-danger">*</span></label>
+                            {{ form.ready_price(class="form-control rounded-3" + (" is-invalid" if form.ready_price.errors else ""), placeholder="0.00") }}
+                            {% for err in form.ready_price.errors %}
+                            <div class="invalid-feedback">{{ err }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <label for="installment_price" class="form-label text-muted fw-semibold">Instalment Price (₹) <span class="text-muted text-xs">(Optional)</span></label>
+                            {{ form.installment_price(class="form-control rounded-3" + (" is-invalid" if form.installment_price.errors else ""), placeholder="0.00") }}
+                            {% for err in form.installment_price.errors %}
                             <div class="invalid-feedback">{{ err }}</div>
                             {% endfor %}
                         </div>

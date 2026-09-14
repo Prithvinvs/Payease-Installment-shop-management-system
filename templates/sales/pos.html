@@ -28,7 +28,7 @@
             <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="fw-bold mb-0 text-dark">Select & Search Products</h5>
-                    <p class="text-muted text-xs mb-0">Choose from product list, scan barcode, or search by keyword</p>
+                    <p class="text-muted text-xs mb-0">Choose from product list or search by name and code</p>
                 </div>
                 <span class="badge bg-light border text-muted rounded-pill text-xs fw-semibold px-3 py-1.5">
                     <i class="bi bi-box-seam me-1 text-primary"></i>{{ products|length }} Available
@@ -41,7 +41,7 @@
                     </label>
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0 rounded-start-3 px-3"><i class="bi bi-search text-primary"></i></span>
-                        <input type="text" id="productSearchInput" class="form-control bg-white border-start-0 border-end-0 text-sm py-2.5" placeholder="Click to view product list, scan barcode, or type product name..." autocomplete="off">
+                        <input type="text" id="productSearchInput" class="form-control bg-white border-start-0 border-end-0 text-sm py-2.5" placeholder="Click to view product list or type product name/code..." autocomplete="off">
                         <button class="btn btn-light border-start-0 border rounded-end-3 px-3 text-muted" type="button" onclick="toggleProductDropdown()">
                             <i class="bi bi-chevron-down"></i>
                         </button>
@@ -63,7 +63,7 @@
                         <button type="button" class="btn btn-sm btn-light border text-start rounded-3 px-2.5 py-1.5 text-xs d-flex align-items-center gap-2 hover-shadow" onclick="addItemToCart('{{ p.id }}')">
                             <div>
                                 <strong class="text-dark d-block text-truncate" style="max-width: 140px;">{{ p.product_name }}</strong>
-                                <span class="text-primary fw-semibold">₹{{ "{:,.2f}".format(p.selling_price) }}</span>
+                                <span class="text-primary fw-semibold">₹{{ "{:,.2f}".format(p.ready_price) }}</span>
                             </div>
                             <span class="badge {% if p.current_stock <= p.minimum_stock %}bg-warning-light text-warning{% else %}bg-success-light text-success{% endif %} rounded-pill ms-1">
                                 {{ p.current_stock }}
@@ -98,10 +98,7 @@
                         </thead>
                         <tbody id="cartTableBody">
                             <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
-                                    <i class="bi bi-cart3 fs-2 d-block mb-2 text-muted"></i>
-                                    Your billing cart is empty. Scan barcodes or search above to add items.
-                                </td>
+                                <td colspan="8" class="text-center py-4 text-muted">Shopping cart is empty. Search products above or select from quick list.</td>
                             </tr>
                         </tbody>
                     </table>

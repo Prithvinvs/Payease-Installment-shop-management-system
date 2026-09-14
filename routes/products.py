@@ -80,7 +80,6 @@ def index():
         query = query.outerjoin(Category).outerjoin(Brand).filter(
             (Product.product_name.ilike(f"%{search_q}%")) |
             (Product.product_code.ilike(f"%{search_q}%")) |
-            (Product.barcode.ilike(f"%{search_q}%")) |
             (Product.description.ilike(f"%{search_q}%")) |
             (Category.name.ilike(f"%{search_q}%")) |
             (Brand.brand_name.ilike(f"%{search_q}%"))
@@ -149,14 +148,13 @@ def add():
         
         prod = Product(
             product_code=code,
-            barcode=code, # Barcode defaults to product code
-            qr_code=code,
             product_name=form.product_name.data,
             category_id=form.category_id.data,
             brand_id=form.brand_id.data,
             description=form.description.data,
             purchase_price=form.purchase_price.data,
-            selling_price=form.selling_price.data,
+            ready_price=form.ready_price.data,
+            installment_price=form.installment_price.data,
             gst_percentage=form.gst_percentage.data,
             discount_percentage=form.discount_percentage.data or 0,
             current_stock=open_stock,
@@ -229,10 +227,13 @@ def edit(id):
             
         prod.product_name = form.product_name.data
         prod.category_id = form.category_id.data
+        prod.product_name = form.product_name.data
+        prod.category_id = form.category_id.data
         prod.brand_id = form.brand_id.data
         prod.description = form.description.data
         prod.purchase_price = form.purchase_price.data
-        prod.selling_price = form.selling_price.data
+        prod.ready_price = form.ready_price.data
+        prod.installment_price = form.installment_price.data
         prod.gst_percentage = form.gst_percentage.data
         prod.discount_percentage = form.discount_percentage.data or 0
         prod.minimum_stock = form.minimum_stock.data
@@ -264,7 +265,7 @@ def edit(id):
 @login_required
 def detail(id):
     """
-    Renders detailed product profile, barcode view, and movement timeline.
+    Renders detailed product profile and movement timeline.
     """
     prod = Product.query.filter_by(id=id, deleted_at=None).first_or_404()
     movements = InventoryMovement.query.filter_by(product_id=id).order_by(InventoryMovement.created_at.desc()).all()
@@ -309,22 +310,11 @@ def delete(id):
 @login_required
 def barcode_print(id):
     """
-    Displays print-friendly barcode labels sheet.
+    Deprecated barcode printing route; redirects to detail view.
     """
     prod = Product.query.filter_by(id=id, deleted_at=None).first_or_404()
-    
-    # Audit Log
-    log = AuditLog(
-        user_id=current_user.id,
-        username=current_user.username,
-        action=f"barcode_print: {prod.product_code}",
-        ip_address=request.remote_addr,
-        user_agent=request.user_agent.string
-    )
-    db.session.add(log)
-    db.session.commit()
-    
-    return render_template('products/barcode_print.html', product=prod)
+    flash("Barcode printing is no longer supported.", "info")
+    return redirect(url_for('products.detail', id=prod.id))
 
 @products_bp.route('/export/<string:format_type>')
 @login_required
@@ -338,12 +328,12 @@ def export_data(format_type):
     if format_type == 'csv':
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Product Code', 'Product Name', 'Barcode', 'Category', 'Brand', 'Purchase Price', 'Selling Price', 'Current Stock', 'Unit', 'Status'])
+        writer.writerow(['Product Code', 'Product Name', 'Category', 'Brand', 'Purchase Price', 'Ready Price', 'Instalment Price', 'Current Stock', 'Unit', 'Status'])
         
         for p in products:
             writer.writerow([
-                p.product_code, p.product_name, p.barcode, p.category.name, p.brand.brand_name,
-                float(p.purchase_price), float(p.selling_price), p.current_stock, p.unit, p.status
+                p.product_code, p.product_name, p.category.name if p.category else '', p.brand.brand_name if p.brand else '',
+                float(p.purchase_price), float(p.ready_price), float(p.installment_price) if p.installment_price is not None else '', p.current_stock, p.unit, p.status
             ])
             
         output.seek(0)
@@ -360,12 +350,12 @@ def export_data(format_type):
         ws.title = "Products Inventory"
         
         # Headers
-        ws.append(['Product Code', 'Product Name', 'Barcode', 'Category', 'Brand', 'Purchase Price', 'Selling Price', 'Current Stock', 'Minimum Stock', 'Maximum Stock', 'Unit', 'Status'])
+        ws.append(['Product Code', 'Product Name', 'Category', 'Brand', 'Purchase Price', 'Ready Price', 'Instalment Price', 'Current Stock', 'Minimum Stock', 'Maximum Stock', 'Unit', 'Status'])
         
         for p in products:
             ws.append([
-                p.product_code, p.product_name, p.barcode, p.category.name, p.brand.brand_name,
-                float(p.purchase_price), float(p.selling_price), p.current_stock, p.minimum_stock, p.maximum_stock, p.unit, p.status
+                p.product_code, p.product_name, p.category.name if p.category else '', p.brand.brand_name if p.brand else '',
+                float(p.purchase_price), float(p.ready_price), float(p.installment_price) if p.installment_price is not None else '', p.current_stock, p.minimum_stock, p.maximum_stock, p.unit, p.status
             ])
             
         out_stream = io.BytesIO()
@@ -410,25 +400,23 @@ def import_data():
             next(reader, None) # Skip header
             
             for row in reader:
-                if len(row) < 5 or not row[1]:
+                if len(row) < 3 or not row[1]:
                     continue
                     
-                sku = row[2].strip() if row[2] else f"BAR-{uuid.uuid4().hex[:8].upper()}"
-                if Product.query.filter_by(barcode=sku, deleted_at=None).first():
-                    continue # Skip duplicate barcodes
-                    
                 code = generate_product_code()
+                p_price = decimal.Decimal(row[4].strip() if len(row) > 4 and row[4] else 1.0)
+                r_price = decimal.Decimal(row[5].strip() if len(row) > 5 and row[5] else p_price * decimal.Decimal('1.2'))
+                i_price = decimal.Decimal(row[6].strip()) if len(row) > 6 and row[6].strip() else None
                 stock = int(row[7]) if len(row) > 7 and row[7] else 0
                 
                 prod = Product(
                     product_code=code,
-                    barcode=sku,
-                    qr_code=code,
                     product_name=row[1].strip(),
                     category_id=def_cat.id,
                     brand_id=def_brand.id,
-                    purchase_price=decimal.Decimal(row[5].strip() if len(row) > 5 and row[5] else 1.0),
-                    selling_price=decimal.Decimal(row[6].strip() if len(row) > 6 and row[6] else 2.0),
+                    purchase_price=p_price,
+                    ready_price=r_price,
+                    installment_price=i_price,
                     current_stock=stock,
                     created_by=current_user.id
                 )
@@ -455,25 +443,23 @@ def import_data():
             rows = list(ws.iter_rows(values_only=True))
             if len(rows) > 1:
                 for row in rows[1:]:
-                    if not row or len(row) < 4 or not row[1]:
-                        continue
-                        
-                    sku = str(row[2]).strip() if row[2] else f"BAR-{uuid.uuid4().hex[:8].upper()}"
-                    if Product.query.filter_by(barcode=sku, deleted_at=None).first():
+                    if not row or len(row) < 2 or not row[1]:
                         continue
                         
                     code = generate_product_code()
+                    p_price = decimal.Decimal(row[4] if len(row) > 4 and row[4] is not None else 1.0)
+                    r_price = decimal.Decimal(row[5] if len(row) > 5 and row[5] is not None else p_price * decimal.Decimal('1.2'))
+                    i_price = decimal.Decimal(row[6]) if len(row) > 6 and row[6] is not None and str(row[6]).strip() else None
                     stock = int(row[7]) if len(row) > 7 and row[7] is not None else 0
                     
                     prod = Product(
                         product_code=code,
-                        barcode=sku,
-                        qr_code=code,
                         product_name=str(row[1]).strip(),
                         category_id=def_cat.id,
                         brand_id=def_brand.id,
-                        purchase_price=decimal.Decimal(row[5] if len(row) > 5 and row[5] is not None else 1.0),
-                        selling_price=decimal.Decimal(row[6] if len(row) > 6 and row[6] is not None else 2.0),
+                        purchase_price=p_price,
+                        ready_price=r_price,
+                        installment_price=i_price,
                         current_stock=stock,
                         created_by=current_user.id
                     )
@@ -498,7 +484,7 @@ def import_data():
             db.session.commit()
             flash(f"Imported {import_count} product records successfully.", "success")
         else:
-            flash("No new products imported (all records matched existing barcodes).", "warning")
+            flash("No products imported.", "warning")
             
     except Exception as e:
         db.session.rollback()

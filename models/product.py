@@ -15,15 +15,14 @@ class Product(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid_pkg.uuid4()))
     product_code = db.Column(db.String(20), unique=True, nullable=False, index=True)
-    barcode = db.Column(db.String(50), unique=True, nullable=False, index=True)
-    qr_code = db.Column(db.String(255), nullable=True)
     
     product_name = db.Column(db.String(100), nullable=False, index=True)
     description = db.Column(db.Text, nullable=True)
     
     # Pricing Details
     purchase_price = db.Column(db.Numeric(10, 2), nullable=False)
-    selling_price = db.Column(db.Numeric(10, 2), nullable=False)
+    ready_price = db.Column(db.Numeric(10, 2), nullable=False)
+    installment_price = db.Column(db.Numeric(10, 2), nullable=True)
     gst_percentage = db.Column(db.Numeric(5, 2), nullable=False, default=0.0)
     discount_percentage = db.Column(db.Numeric(5, 2), nullable=False, default=0.0)
     
@@ -51,6 +50,13 @@ class Product(db.Model):
     category = db.relationship('Category', back_populates='products')
     brand = db.relationship('Brand', back_populates='products')
     movements = db.relationship('InventoryMovement', back_populates='product', cascade="all, delete-orphan", lazy=True)
+
+    @property
+    def selling_price(self):
+        """
+        Backward-compatibility property returning ready_price.
+        """
+        return self.ready_price
 
     @property
     def is_low_stock(self):
@@ -89,9 +95,9 @@ class Product(db.Model):
     @property
     def stock_value(self):
         """
-        Calculates standard asset cost evaluation (selling_price * current_stock).
+        Calculates standard asset cost evaluation (ready_price * current_stock).
         """
-        return float(self.selling_price) * self.current_stock
+        return float(self.ready_price) * self.current_stock
 
     def __repr__(self):
         return f"<Product {self.product_name} ({self.product_code})>"

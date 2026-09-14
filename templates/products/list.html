@@ -68,7 +68,7 @@
                 <label for="search" class="form-label text-muted fw-semibold">Search Product</label>
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-primary"></i></span>
-                    <input type="text" name="search" id="search" class="form-control text-sm border-start-0 rounded-end-3 py-2" placeholder="Search by name, code, barcode..." value="{{ search_q or '' }}" autocomplete="off">
+                    <input type="text" name="search" id="search" class="form-control text-sm border-start-0 rounded-end-3 py-2" placeholder="Search by name, product code..." value="{{ search_q or '' }}" autocomplete="off">
                 </div>
                 <!-- Search History Dropdown Popover -->
                 <div id="searchHistoryDropdown" class="position-absolute shadow-lg border rounded-3 w-100 bg-white mt-1 d-none" style="z-index: 1050; top: 100%; left: 0;">
@@ -119,11 +119,11 @@
                     <tr>
                         <th scope="col" style="width: 60px;">Image</th>
                         <th scope="col">Product Code</th>
-                        <th scope="col">Barcode</th>
                         <th scope="col">Product Name</th>
                         <th scope="col">Category</th>
                         <th scope="col">Brand</th>
-                        <th scope="col">Selling Price</th>
+                        <th scope="col">Ready Price</th>
+                        <th scope="col">Instalment Price</th>
                         <th scope="col">Stock</th>
                         <th scope="col">Stock Status</th>
                         <th scope="col">Status</th>
@@ -143,7 +143,6 @@
                             {% endif %}
                         </td>
                         <td class="fw-bold text-dark text-xs">{{ p.product_code }}</td>
-                        <td class="text-muted text-xs">{{ p.barcode }}</td>
                         <td>
                             <a href="{{ url_for('products.detail', id=p.id) }}" class="fw-semibold text-primary text-decoration-none d-block lh-sm">
                                 {{ p.product_name }}
@@ -152,7 +151,8 @@
                         </td>
                         <td><span class="badge bg-light text-dark text-xs border rounded-pill px-2.5">{{ p.category.name }}</span></td>
                         <td><span class="fw-medium text-secondary">{{ p.brand.brand_name }}</span></td>
-                        <td class="fw-bold text-dark">₹{{ "{:,.2f}".format(p.selling_price) }}</td>
+                        <td class="fw-bold text-dark">₹{{ "{:,.2f}".format(p.ready_price) }}</td>
+                        <td class="fw-semibold text-info">{% if p.installment_price %}₹{{ "{:,.2f}".format(p.installment_price) }}{% else %}<span class="text-muted text-xs">N/A</span>{% endif %}</td>
                         <td class="fw-bold text-dark">{{ p.current_stock }}</td>
                         <td>
                             {% if p.stock_status == 'In Stock' %}
@@ -179,7 +179,6 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 text-sm">
                                     <li><a class="dropdown-item py-2" href="{{ url_for('products.detail', id=p.id) }}"><i class="bi bi-eye me-2 text-primary"></i>View Details</a></li>
-                                    <li><a class="dropdown-item py-2" href="{{ url_for('products.barcode_print', id=p.id) }}"><i class="bi bi-printer me-2 text-muted"></i>Print Barcode</a></li>
                                     {% if current_user.role.role_name in ['Super Admin', 'Admin'] %}
                                     <li><a class="dropdown-item py-2" href="{{ url_for('products.edit', id=p.id) }}"><i class="bi bi-pencil me-2 text-info"></i>Edit Product</a></li>
                                     <li><hr class="dropdown-divider"></li>

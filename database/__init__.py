@@ -166,17 +166,17 @@ def init_db(app):
         products = []
         for i in range(1, 51):
             purchase_price = 10000.00 + (i * 1000)
-            selling_price = purchase_price * 1.25
+            ready_price = purchase_price * 1.25
+            inst_price = ready_price * 1.10 if i % 2 == 0 else None
             prod = Product(
                 product_code=f"PRD{i:04d}",
-                barcode=f"BARCODE-{1000 + i}",
-                qr_code=f"PRD{i:04d}",
                 product_name=f"Product Name {i}",
                 category_id=categories[i % len(categories)].id,
                 brand_id=brands[i % len(brands)].id,
                 description=f"Seeded premium product index {i}.",
                 purchase_price=decimal.Decimal(str(purchase_price)),
-                selling_price=decimal.Decimal(str(selling_price)),
+                ready_price=decimal.Decimal(str(ready_price)),
+                installment_price=decimal.Decimal(str(inst_price)) if inst_price else None,
                 gst_percentage=decimal.Decimal('18.0'),
                 discount_percentage=decimal.Decimal('0.0'),
                 current_stock=100, # Large stock to support 300 checkouts

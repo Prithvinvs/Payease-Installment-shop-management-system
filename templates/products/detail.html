@@ -15,9 +15,6 @@
         <h1 class="h3 fw-bold mb-0 text-dark">Product Details</h1>
     </div>
     <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0 d-flex flex-wrap justify-content-md-end gap-2">
-        <a href="{{ url_for('products.barcode_print', id=product.id) }}" class="btn btn-light border btn-sm px-3 rounded-pill">
-            <i class="bi bi-printer me-1.5 text-muted"></i>Print Barcode Sheet
-        </a>
         <button type="button" class="btn btn-warning btn-sm px-3 rounded-pill text-dark" data-bs-toggle="modal" data-bs-target="#adjustStockModal">
             <i class="bi bi-arrow-left-right me-1.5"></i>Adjust Stock
         </button>
@@ -78,11 +75,11 @@
         </div>
     </div>
 
-    <!-- Summary Widgets & Barcode/QR panels -->
+    <!-- Summary Widgets -->
     <div class="col-12 col-lg-8">
         <!-- Summary Cards Grid -->
         <div class="row g-3 mb-4">
-            <div class="col-12 col-sm-6 col-md-4">
+            <div class="col-12 col-sm-6">
                 <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
                     <h6 class="text-muted text-xs uppercase mb-1">Current Stock</h6>
                     <h3 class="fw-bold mb-1 text-dark">{{ product.current_stock }}</h3>
@@ -100,50 +97,32 @@
                 </div>
             </div>
             
-            <div class="col-12 col-sm-6 col-md-4">
+            <div class="col-12 col-sm-6">
                 <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
-                    <h6 class="text-muted text-xs uppercase mb-1">Selling Price</h6>
-                    <h3 class="fw-bold text-primary mb-1">₹{{ "{:,.2f}".format(product.selling_price) }}</h3>
+                    <h6 class="text-muted text-xs uppercase mb-1">Ready Price</h6>
+                    <h3 class="fw-bold text-primary mb-1">₹{{ "{:,.2f}".format(product.ready_price) }}</h3>
                     <small class="text-muted text-xs">Purchase: ₹{{ "{:,.2f}".format(product.purchase_price) }}</small>
                 </div>
             </div>
+
+            <div class="col-12 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
+                    <h6 class="text-muted text-xs uppercase mb-1">Instalment Price</h6>
+                    {% if product.installment_price %}
+                    <h3 class="fw-bold text-info mb-1">₹{{ "{:,.2f}".format(product.installment_price) }}</h3>
+                    <small class="text-muted text-xs">Optional installment rate</small>
+                    {% else %}
+                    <h4 class="fw-semibold text-muted mb-1 mt-1">Not Set</h4>
+                    <small class="text-muted text-xs">Falls back to Ready Price</small>
+                    {% endif %}
+                </div>
+            </div>
             
-            <div class="col-12 col-sm-6 col-md-4">
+            <div class="col-12 col-sm-6">
                 <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
                     <h6 class="text-muted text-xs uppercase mb-1">Asset Value</h6>
                     <h3 class="fw-bold text-success mb-1">₹{{ "{:,.2f}".format(product.stock_value) }}</h3>
-                    <small class="text-muted text-xs">Based on selling price</small>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Barcode & QR code blocks -->
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
-                <h5 class="fw-bold mb-0 text-dark">Barcode & Identification Codes</h5>
-                <p class="text-muted text-xs mb-0">Client-side rendering. Download coordinates tag assets directly</p>
-            </div>
-            <div class="card-body p-4">
-                <div class="row g-4 text-center">
-                    <div class="col-12 col-sm-6 border-end">
-                        <span class="text-xs text-muted d-block mb-3">PRODUCT BARCODE (CODE128)</span>
-                        <div class="bg-white p-3 border rounded-3 mb-3 d-inline-block">
-                            <svg id="barcodeCanvas" class="w-100" style="max-height: 80px;"></svg>
-                        </div>
-                        <div>
-                            <button onclick="downloadBarcode()" class="btn btn-xs btn-light border rounded-pill px-3 me-2"><i class="bi bi-download me-1 text-muted"></i>Download Barcode</button>
-                        </div>
-                    </div>
-                    
-                    <div class="col-12 col-sm-6">
-                        <span class="text-xs text-muted d-block mb-3">PRODUCT QR CODE</span>
-                        <div class="bg-white p-3 border rounded-3 mb-3 d-inline-block">
-                            <canvas id="qrCanvas" style="width: 100px; height: 100px;"></canvas>
-                        </div>
-                        <div>
-                            <button onclick="downloadQR()" class="btn btn-xs btn-light border rounded-pill px-3"><i class="bi bi-download me-1 text-muted"></i>Download QR Code</button>
-                        </div>
-                    </div>
+                    <small class="text-muted text-xs">Based on ready price</small>
                 </div>
             </div>
         </div>
@@ -252,58 +231,12 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- CDN script tags for client side JS barcodes and QR generation -->
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-
 <script>
     $(document).ready(function() {
         $('#movementsTable').DataTable({
             "order": [[0, "desc"]],
             "pageLength": 5
         });
-        
-        // Render Barcode CODE128
-        JsBarcode("#barcodeCanvas", "{{ product.barcode }}", {
-            format: "CODE128",
-            width: 1.8,
-            height: 50,
-            displayValue: true,
-            background: "#ffffff"
-        });
-        
-        // Render QR Code
-        var qr = new QRious({
-            element: document.getElementById('qrCanvas'),
-            value: '{{ product.qr_code }}',
-            size: 150
-        });
     });
-
-    function downloadBarcode() {
-        // Convert SVG to base64 -> PNG
-        const svg = document.getElementById('barcodeCanvas');
-        const serializer = new XMLSerializer();
-        let source = serializer.serializeToString(svg);
-        
-        if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
-            source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-        }
-        source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
-        const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
-        
-        const link = document.createElement('a');
-        link.download = 'barcode_{{ product.product_code }}.svg';
-        link.href = url;
-        link.click();
-    }
-
-    function downloadQR() {
-        const canvas = document.getElementById('qrCanvas');
-        const link = document.createElement('a');
-        link.download = 'qr_{{ product.product_code }}.png';
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    }
 </script>
 {% endblock %}
