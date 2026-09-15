@@ -51,19 +51,14 @@ def save_profile_photo(file_data):
 
 def generate_customer_code():
     """
-    Calculates next available CUSTXXXX format sequence.
+    Calculates next available CUSTXXXX format sequence without collision.
     """
-    last_customer = Customer.query.order_by(Customer.customer_code.desc()).first()
-    if not last_customer:
-        return "CUST0001"
-    
-    code = last_customer.customer_code
-    try:
-        num = int(code.replace("CUST", ""))
-        new_num = num + 1
-        return f"CUST{new_num:04d}"
-    except ValueError:
-        return f"CUST{uuid.uuid4().hex[:4].upper()}"
+    count = Customer.query.count() + 1
+    code = f"CUST{count:04d}"
+    while Customer.query.filter_by(customer_code=code).first():
+        count += 1
+        code = f"CUST{count:04d}"
+    return code
 
 
 # --- Routes ---

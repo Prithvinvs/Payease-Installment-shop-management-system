@@ -17,6 +17,7 @@ def product_to_dict(p):
     return {
         'id': p.id,
         'product_code': p.product_code or '',
+        'barcode': p.barcode or '',
         'product_name': p.product_name or '',
         'description': p.description or '',
         'purchase_price': float(p.purchase_price),

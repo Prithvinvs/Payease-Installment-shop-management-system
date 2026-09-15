@@ -59,6 +59,13 @@ class Product(db.Model):
         return self.ready_price
 
     @property
+    def barcode(self):
+        """
+        Backward-compatibility property returning product_code as barcode.
+        """
+        return self.product_code
+
+    @property
     def is_low_stock(self):
         """
         Helper property returning whether stock is below warning threshold.

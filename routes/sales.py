@@ -116,3 +116,4 @@ def invoice_print(id):
     db.session.commit()
     
     return render_template('sales/invoice_print.html', sale=sale, today=date.today())
+    return render_template('sales/invoice_print.html', sale=sale, today=date.today())

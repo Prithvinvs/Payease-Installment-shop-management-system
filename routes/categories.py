@@ -17,17 +17,14 @@ categories_bp = Blueprint('categories', __name__, url_prefix='/categories')
 
 def generate_category_code():
     """
-    Calculates next sequence CATXXXX.
+    Calculates next available CATXXXX format sequence without collision.
     """
-    last_cat = Category.query.order_by(Category.category_code.desc()).first()
-    if not last_cat:
-        return "CAT0001"
-    code = last_cat.category_code
-    try:
-        num = int(code.replace("CAT", ""))
-        return f"CAT{num + 1:04d}"
-    except ValueError:
-        return f"CAT{uuid.uuid4().hex[:4].upper()}"
+    count = Category.query.count() + 1
+    code = f"CAT{count:04d}"
+    while Category.query.filter_by(category_code=code).first():
+        count += 1
+        code = f"CAT{count:04d}"
+    return code
 
 @categories_bp.route('/')
 @login_required

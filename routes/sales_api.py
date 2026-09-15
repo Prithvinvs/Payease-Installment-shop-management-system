@@ -26,57 +26,42 @@ sales_api_bp = Blueprint('sales_api', __name__, url_prefix='/api')
 
 def generate_invoice_number():
     """
-    Generates next sequential invoice code: INV-2026-000001.
+    Generates next sequential invoice code: INV-2026-000001 without collision.
     """
     year = datetime.now().year
     prefix = f"INV-{year}-"
-    
-    last_sale = Sale.query.filter(Sale.invoice_number.like(f"{prefix}%")).order_by(Sale.invoice_number.desc()).first()
-    if not last_sale:
-        return f"{prefix}000001"
-        
-    code = last_sale.invoice_number
-    try:
-        num = int(code.replace(prefix, ""))
-        return f"{prefix}{num + 1:06d}"
-    except ValueError:
-        return f"{prefix}{uuid_pkg.uuid4().hex[:6].upper()}"
+    count = Sale.query.filter(Sale.invoice_number.like(f"{prefix}%")).count() + 1
+    code = f"{prefix}{count:06d}"
+    while Sale.query.filter_by(invoice_number=code).first():
+        count += 1
+        code = f"{prefix}{count:06d}"
+    return code
 
 def generate_plan_number():
     """
-    Generates next sequential plan code: PLAN-2026-000001.
+    Generates next sequential plan code: PLAN-2026-000001 without collision.
     """
     year = datetime.now().year
     prefix = f"PLAN-{year}-"
-    
-    last_plan = InstalmentPlan.query.filter(InstalmentPlan.plan_number.like(f"{prefix}%")).order_by(InstalmentPlan.plan_number.desc()).first()
-    if not last_plan:
-        return f"{prefix}000001"
-        
-    code = last_plan.plan_number
-    try:
-        num = int(code.replace(prefix, ""))
-        return f"{prefix}{num + 1:06d}"
-    except ValueError:
-        return f"{prefix}{uuid_pkg.uuid4().hex[:6].upper()}"
+    count = InstalmentPlan.query.filter(InstalmentPlan.plan_number.like(f"{prefix}%")).count() + 1
+    code = f"{prefix}{count:06d}"
+    while InstalmentPlan.query.filter_by(plan_number=code).first():
+        count += 1
+        code = f"{prefix}{count:06d}"
+    return code
 
 def generate_receipt_number():
     """
-    Generates next sequential receipt code: RCT-2026-000001.
+    Generates next sequential receipt code: RCT-2026-000001 without collision.
     """
     year = datetime.now().year
     prefix = f"RCT-{year}-"
-    
-    last_pay = Payment.query.filter(Payment.receipt_number.like(f"{prefix}%")).order_by(Payment.receipt_number.desc()).first()
-    if not last_pay:
-        return f"{prefix}000001"
-        
-    code = last_pay.receipt_number
-    try:
-        num = int(code.replace(prefix, ""))
-        return f"{prefix}{num + 1:06d}"
-    except ValueError:
-        return f"{prefix}{uuid_pkg.uuid4().hex[:6].upper()}"
+    count = Payment.query.filter(Payment.receipt_number.like(f"{prefix}%")).count() + 1
+    code = f"{prefix}{count:06d}"
+    while Payment.query.filter_by(receipt_number=code).first():
+        count += 1
+        code = f"{prefix}{count:06d}"
+    return code
 
 def sale_to_dict(s):
     return {

@@ -7,19 +7,24 @@
     <div class="col-12 col-md-6">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-1 text-xs">
-                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-muted">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('instalments.index') }}" class="text-decoration-none text-muted">Instalment Plans</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}"
+                        class="text-decoration-none text-muted">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('instalments.index') }}"
+                        class="text-decoration-none text-muted">Instalment Plans</a></li>
                 <li class="breadcrumb-item active text-primary" aria-current="page">{{ plan.plan_number }}</li>
             </ol>
         </nav>
         <h1 class="h3 fw-bold mb-0 text-dark">Plan Details: {{ plan.plan_number }}</h1>
     </div>
     <div class="col-12 col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end gap-2 text-sm">
-        <a href="{{ url_for('instalments.print_schedule', id=plan.id) }}" target="_blank" class="btn btn-light border btn-sm px-3 rounded-pill">
+        <a href="{{ url_for('instalments.print_schedule', id=plan.id) }}" target="_blank"
+            class="btn btn-light border btn-sm px-3 rounded-pill">
             <i class="bi bi-printer me-1 text-muted"></i>Print Schedule
         </a>
-        {% if current_user.role.role_name in ['Super Admin', 'Admin'] and plan.status != 'completed' and plan.status != 'cancelled' %}
-        <button type="button" class="btn btn-primary btn-sm px-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#rescheduleModal">
+        {% if current_user.role.role_name in ['Super Admin', 'Admin'] and plan.status != 'completed' and plan.status !=
+        'cancelled' %}
+        <button type="button" class="btn btn-primary btn-sm px-3 rounded-pill" data-bs-toggle="modal"
+            data-bs-target="#rescheduleModal">
             <i class="bi bi-calendar-event me-1"></i>Reschedule Plan
         </button>
         {% endif %}
@@ -35,17 +40,20 @@
                 <div>
                     <h6 class="fw-bold text-dark mb-1">Repayment Progress</h6>
                     <p class="text-muted text-xs mb-3">Overall progress of EMI schedules collections</p>
-                    
-                    {% set paid_pct = (plan.paid_amount / plan.remaining_balance * 100) | round(1) if plan.remaining_balance > 0 else 0 %}
+
+                    {% set paid_pct = (plan.paid_amount / plan.remaining_balance * 100) | round(1) if
+                    plan.remaining_balance > 0 else 0 %}
                     <div class="d-flex justify-content-between align-items-center mb-1.5 text-xs text-secondary">
                         <span>Cleared: ₹{{ "{:,.2f}".format(plan.paid_amount) }} ({{ paid_pct }}%)</span>
                         <span>Outstanding: ₹{{ "{:,.2f}".format(plan.outstanding_amount) }}</span>
                     </div>
                     <div class="progress rounded-pill mb-3" style="height: 8px;">
-                        <div class="progress-bar bg-success rounded-pill" role="progressbar" style="width: {{ paid_pct }}%" aria-valuenow="{{ paid_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar bg-success rounded-pill" role="progressbar"
+                            style="width: {{ paid_pct }}%" aria-valuenow="{{ paid_pct }}" aria-valuemin="0"
+                            aria-valuemax="100"></div>
                     </div>
                 </div>
-                
+
                 <div class="row g-3 text-xs mt-2">
                     <div class="col-6 col-md-3">
                         <div class="bg-light p-2.5 rounded-3 text-center">
@@ -75,7 +83,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Balance Summary KPI Card -->
     <div class="col-12 col-lg-4">
         <div class="card border-0 shadow-sm rounded-4 h-100 bg-primary text-white">
@@ -83,7 +91,8 @@
                 <div>
                     <span class="text-white-50 text-xs uppercase fw-bold tracking-wider">Outstanding Dues</span>
                     <h2 class="fw-extrabold text-white mb-2 mt-1">₹{{ "{:,.2f}".format(plan.outstanding_amount) }}</h2>
-                    <span class="badge bg-white-20 rounded-pill text-xs fw-semibold">EMI: ₹{{ "{:,.2f}".format(plan.monthly_emi) }} / {{ plan.period_unit_label }}</span>
+                    <span class="badge bg-white-20 rounded-pill text-xs fw-semibold">EMI: ₹{{
+                        "{:,.2f}".format(plan.monthly_emi) }} / {{ plan.period_unit_label }}</span>
                 </div>
                 <div class="border-top border-white-10 pt-3 mt-4 text-xs">
                     <div class="d-flex justify-content-between mb-1 text-white-80">
@@ -106,29 +115,31 @@
     <div class="col-12 col-md-6">
         <div class="card border-0 shadow-sm rounded-4 h-100">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person text-muted me-2"></i>Customer Account Profile</h6>
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person text-muted me-2"></i>Customer Account Profile
+                </h6>
                 <div class="row g-2">
                     <div class="col-4 text-muted text-xs">Full Name:</div>
                     <div class="col-8 fw-semibold text-dark">{{ plan.customer.full_name }}</div>
-                    
+
                     <div class="col-4 text-muted text-xs">Customer Code:</div>
                     <div class="col-8 text-dark">{{ plan.customer.customer_code }}</div>
-                    
+
                     <div class="col-4 text-muted text-xs">Phone Number:</div>
                     <div class="col-8 text-dark">{{ plan.customer.phone_number }}</div>
-                    
+
                     <div class="col-4 text-muted text-xs">Aadhaar Number:</div>
                     <div class="col-8 text-dark">{{ plan.customer.aadhaar_number or 'N/A' }}</div>
-                    
+
                     <div class="col-4 text-muted text-xs">Home Address:</div>
                     <div class="col-8 text-dark">
-                        {{ plan.customer.address_line1 }}, {{ plan.customer.city }}, {{ plan.customer.state }} - {{ plan.customer.postal_code }}
+                        {{ plan.customer.address_line1 }}, {{ plan.customer.city }}, {{ plan.customer.state }} - {{
+                        plan.customer.postal_code }}
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Sale Parameters Invoice Card -->
     <div class="col-12 col-md-6">
         <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -137,20 +148,21 @@
                 <div class="row g-2">
                     <div class="col-4 text-muted text-xs">Invoice Number:</div>
                     <div class="col-8 fw-semibold text-primary">{{ plan.invoice_number }}</div>
-                    
+
                     <div class="col-4 text-muted text-xs">Sale Date:</div>
                     <div class="col-8 text-dark">{{ plan.sale.sale_date.strftime('%Y-%m-%d %H:%M') }}</div>
-                    
+
                     <div class="col-4 text-muted text-xs">Products Ordered:</div>
                     <div class="col-8 text-dark">
                         {% for item in plan.sale.items %}
-                        <span class="d-block fw-semibold text-xs text-dark">• {{ item.product.product_name }} (Qty: {{ item.quantity }})</span>
+                        <span class="d-block fw-semibold text-xs text-dark">• {{ item.product.product_name }} (Qty: {{
+                            item.quantity }})</span>
                         {% endfor %}
                     </div>
-                    
+
                     <div class="col-4 text-muted text-xs">Down Payment Paid:</div>
                     <div class="col-8 text-success fw-bold">₹{{ "{:,.2f}".format(plan.down_payment) }}</div>
-                    
+
                     <div class="col-4 text-muted text-xs">Plan Start Date:</div>
                     <div class="col-8 text-dark">{{ plan.start_date.strftime('%Y-%m-%d') }}</div>
                 </div>
@@ -230,38 +242,49 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <p class="text-muted text-xs mb-4">Allows shifting due dates or recalculating unpaid balances for this schedule ledger.</p>
-                    
+                    <p class="text-muted text-xs mb-4">Allows shifting due dates or recalculating unpaid balances for
+                        this schedule ledger.</p>
+
                     <div class="mb-3">
-                        <label for="fromInstInput" class="form-label text-muted fw-semibold">Start Rescheduling From</label>
+                        <label for="fromInstInput" class="form-label text-muted fw-semibold">Start Rescheduling
+                            From</label>
                         <select class="form-select rounded-3 text-sm" id="fromInstInput" required>
                             {% for item in plan.schedules %}
-                                {% if item.payment_status != 'paid' %}
-                                <option value="{{ item.instalment_number }}">Instalment #{{ item.instalment_number }} (Due: {{ item.due_date.strftime('%Y-%m-%d') }})</option>
-                                {% endif %}
+                            {% if item.payment_status != 'paid' %}
+                            <option value="{{ item.instalment_number }}">Instalment #{{ item.instalment_number }} (Due:
+                                {{ item.due_date.strftime('%Y-%m-%d') }})</option>
+                            {% endif %}
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="newDueDateInput" class="form-label text-muted fw-semibold">New Due Date for Selected Month</label>
+                        <label for="newDueDateInput" class="form-label text-muted fw-semibold">New Due Date for Selected
+                            Month</label>
                         <input type="date" class="form-control rounded-3 text-sm" id="newDueDateInput" required>
-                        <small class="text-muted text-xs mt-1 d-block">Subsequent unpaid EMI months will shift sequentially by 30-day offsets.</small>
+                        <small class="text-muted text-xs mt-1 d-block">Subsequent unpaid EMI months will shift
+                            sequentially by 30-day offsets.</small>
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="newAmountInput" class="form-label text-muted fw-semibold">New Monthly EMI Amount (₹)</label>
-                        <input type="number" class="form-control rounded-3 text-sm" id="newAmountInput" value="{{ plan.monthly_emi }}" min="1" step="1">
-                        <small class="text-muted text-xs mt-1 d-block">Leave unchanged to maintain the current EMI amount of ₹{{ plan.monthly_emi }}.</small>
+                        <label for="newAmountInput" class="form-label text-muted fw-semibold">New Monthly EMI Amount
+                            (₹)</label>
+                        <input type="number" class="form-control rounded-3 text-sm" id="newAmountInput"
+                            value="{{ plan.monthly_emi }}" min="1" step="1">
+                        <small class="text-muted text-xs mt-1 d-block">Leave unchanged to maintain the current EMI
+                            amount of ₹{{ plan.monthly_emi }}.</small>
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="rescheduleRemarks" class="form-label text-muted fw-semibold">Rescheduling Remarks / Reason</label>
-                        <textarea class="form-control rounded-3 text-sm" id="rescheduleRemarks" rows="2" placeholder="Explain reasoning (e.g. grace period request, customer rescheduling demand)"></textarea>
+                        <label for="rescheduleRemarks" class="form-label text-muted fw-semibold">Rescheduling Remarks /
+                            Reason</label>
+                        <textarea class="form-control rounded-3 text-sm" id="rescheduleRemarks" rows="2"
+                            placeholder="Explain reasoning (e.g. grace period request, customer rescheduling demand)"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4 px-4 pt-0">
-                    <button type="button" class="btn btn-light border rounded-pill px-3 text-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-light border rounded-pill px-3 text-sm"
+                        data-bs-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 text-sm">Save Reschedule</button>
                 </div>
             </form>
@@ -275,7 +298,7 @@
 <script>
     function submitReschedule(e) {
         e.preventDefault();
-        
+
         const payload = {
             plan_id: $('input[name="plan_id"]').val(),
             reschedule_from_number: parseInt($('#fromInstInput').val()),
@@ -283,18 +306,18 @@
             new_amount: parseFloat($('#newAmountInput').val()) || null,
             remarks: $('#rescheduleRemarks').val()
         };
-        
+
         // POST to REST API
         $.ajax({
             url: '/api/instalments/reschedule',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(payload),
-            success: function(response) {
+            success: function (response) {
                 alert(response.message);
                 window.location.reload();
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 const err = xhr.responseJSON ? xhr.responseJSON.error : "Unknown reschedule error.";
                 alert("Rescheduling Failed: " + err);
             }

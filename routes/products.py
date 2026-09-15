@@ -46,18 +46,14 @@ def save_product_image(file_data):
 
 def generate_product_code():
     """
-    Generates next sequential product code.
+    Generates next available PRDXXXX sequence without collision.
     """
-    last_prod = Product.query.order_by(Product.product_code.desc()).first()
-    if not last_prod:
-        return "PRD0001"
-    
-    code = last_prod.product_code
-    try:
-        num = int(code.replace("PRD", ""))
-        return f"PRD{num + 1:04d}"
-    except ValueError:
-        return f"PRD{uuid.uuid4().hex[:4].upper()}"
+    count = Product.query.count() + 1
+    code = f"PRD{count:04d}"
+    while Product.query.filter_by(product_code=code).first():
+        count += 1
+        code = f"PRD{count:04d}"
+    return code
 
 
 # --- Routes ---

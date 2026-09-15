@@ -23,21 +23,16 @@ payments_api_bp = Blueprint('payments_api', __name__, url_prefix='/api')
 
 def generate_receipt_number():
     """
-    Generates next sequential receipt code: RCT-2026-000001.
+    Generates next sequential receipt code: RCT-2026-000001 without collision.
     """
     year = datetime.now().year
     prefix = f"RCT-{year}-"
-    
-    last_pay = Payment.query.filter(Payment.receipt_number.like(f"{prefix}%")).order_by(Payment.receipt_number.desc()).first()
-    if not last_pay:
-        return f"{prefix}000001"
-        
-    code = last_pay.receipt_number
-    try:
-        num = int(code.replace(prefix, ""))
-        return f"{prefix}{num + 1:06d}"
-    except ValueError:
-        return f"{prefix}{uuid_pkg.uuid4().hex[:6].upper()}"
+    count = Payment.query.filter(Payment.receipt_number.like(f"{prefix}%")).count() + 1
+    code = f"{prefix}{count:06d}"
+    while Payment.query.filter_by(receipt_number=code).first():
+        count += 1
+        code = f"{prefix}{count:06d}"
+    return code
 
 def payment_to_dict(p):
     return {
