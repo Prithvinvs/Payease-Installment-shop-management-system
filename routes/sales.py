@@ -2,9 +2,7 @@
 Sales and POS billing routes blueprint.
 Handles POS checkout interface, history directory, details invoices, and printing.
 """
-from datetime import datetime, date
-import uuid
-import decimal
+from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required, current_user
 
@@ -36,9 +34,7 @@ def index():
     if filter_type == 'today':
         query = query.filter(db.func.date(Sale.sale_date) == today)
     elif filter_type == 'this_week':
-        start_week = today - db.func.timedelta(days=today.weekday()) # approximate or timedelta
-        # Simple date math fallback:
-        start_date = datetime.now() - datetime.timedelta(days=7)
+        start_date = datetime.now() - timedelta(days=7)
         query = query.filter(Sale.sale_date >= start_date)
     elif filter_type == 'this_month':
         query = query.filter(db.extract('month', Sale.sale_date) == today.month)
@@ -115,5 +111,4 @@ def invoice_print(id):
     db.session.add(log)
     db.session.commit()
     
-    return render_template('sales/invoice_print.html', sale=sale, today=date.today())
     return render_template('sales/invoice_print.html', sale=sale, today=date.today())
